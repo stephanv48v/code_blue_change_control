@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -35,13 +36,37 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user('web');
+        $contact = $request->user('client');
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user ? [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    // Include role-derived permissions for frontend nav/feature gating.
+                    'roles' => $user->getRoleNames()->values()->all(),
+                    'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
+                    'is_microsoft_user' => $user->isMicrosoftUser(),
+                ] : null,
+                'contact' => $contact ? [
+                    'id' => $contact->id,
+                    'name' => $contact->name,
+                    'email' => $contact->email,
+                    'job_title' => $contact->job_title,
+                    'client' => $contact->client,
+                ] : null,
             ],
-            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'flash' => [
+                'message' => fn () => $request->session()->get('message'),
+                'error' => fn () => $request->session()->get('error'),
+            ],
+            'config' => [
+                'enable_local_login' => config('app.enable_local_login'),
+            ],
         ];
     }
 }

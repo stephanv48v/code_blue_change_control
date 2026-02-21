@@ -1,15 +1,15 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
-import type { NavItem } from '@/types';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
 import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
+import type { NavItem, SharedData } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
     {
@@ -32,10 +32,25 @@ const sidebarNavItems: NavItem[] = [
         href: editAppearance(),
         icon: null,
     },
+    {
+        title: 'Integrations',
+        href: '/settings/integrations',
+        icon: null,
+        requiredPermission: 'integrations.manage',
+    },
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentUrl } = useCurrentUrl();
+    const { auth } = usePage<SharedData>().props;
+    const permissions = auth.user?.permissions ?? [];
+    const visibleItems = sidebarNavItems.filter((item) => {
+        if (!item.requiredPermission) {
+            return true;
+        }
+
+        return permissions.includes(item.requiredPermission);
+    });
 
     // When server-side rendering, we only render the layout on the client...
     if (typeof window === 'undefined') {
@@ -55,7 +70,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                         className="flex flex-col space-y-1 space-x-0"
                         aria-label="Settings"
                     >
-                        {sidebarNavItems.map((item, index) => (
+                        {visibleItems.map((item, index) => (
                             <Button
                                 key={`${toUrl(item.href)}-${index}`}
                                 size="sm"

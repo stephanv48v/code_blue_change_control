@@ -40,6 +40,12 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Client portal guard for external contacts
+        'client' => [
+            'driver' => 'session',
+            'provider' => 'client_contacts',
+        ],
     ],
 
     /*
@@ -65,10 +71,11 @@ return [
             'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        // Provider for client portal contacts
+        'client_contacts' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\ClientContact::class,
+        ],
     ],
 
     /*

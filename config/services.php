@@ -35,4 +35,39 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Microsoft Entra ID (Azure AD) SSO Configuration
+    |--------------------------------------------------------------------------
+    */
+    'microsoft' => [
+        'client_id' => env('MICROSOFT_CLIENT_ID'),
+        'client_secret' => env('MICROSOFT_CLIENT_SECRET'),
+        'redirect' => env('MICROSOFT_REDIRECT_URI'),
+        'tenant' => env('MICROSOFT_TENANT_ID'),
+        'auth_url' => env('MICROSOFT_AUTH_URL', 'https://login.microsoftonline.com/common'),
+        'include_tenant_info' => true,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | MSP Integrations
+    |--------------------------------------------------------------------------
+    */
+    'connectwise' => [
+        'base_url' => env('CONNECTWISE_BASE_URL'),
+    ],
+
+    'it_glue' => [
+        'base_url' => env('IT_GLUE_BASE_URL'),
+    ],
+
+    'kaseya' => [
+        'base_url' => env('KASEYA_BASE_URL'),
+    ],
+
+    'auvik' => [
+        'base_url' => env('AUVIK_BASE_URL'),
+    ],
+
 ];

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
+use App\Http\Controllers\Settings\IntegrationSettingsController;
 use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -28,4 +29,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('settings/two-factor', [TwoFactorAuthenticationController::class, 'show'])
         ->name('two-factor.show');
+
+    Route::get('settings/integrations', [IntegrationSettingsController::class, 'index'])
+        ->middleware('can:integrations.manage')
+        ->name('settings.integrations');
+
+    Route::post('settings/integrations/microsoft-sso', [IntegrationSettingsController::class, 'saveMicrosoftSso'])
+        ->middleware('can:integrations.manage')
+        ->name('settings.integrations.microsoft-sso');
+
+    Route::post('settings/integrations/group-mappings', [IntegrationSettingsController::class, 'saveGroupMappings'])
+        ->middleware('can:integrations.manage')
+        ->name('settings.integrations.group-mappings');
 });

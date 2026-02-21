@@ -123,4 +123,14 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | MSP Change Control - Custom Configuration
+    |--------------------------------------------------------------------------
+    */
+
+    'enable_local_login' => env('ENABLE_LOCAL_LOGIN', false),
+
+    'admin_emails' => env('ADMIN_EMAILS', ''),
+
 ];

@@ -1,0 +1,54 @@
+export type Client = {
+    id: number;
+    name: string;
+    slug: string;
+    code: string;
+    address: string | null;
+    city: string | null;
+    state: string | null;
+    postal_code: string | null;
+    country: string;
+    phone: string | null;
+    website: string | null;
+    industry: string | null;
+    notes: string | null;
+    is_active: boolean;
+    contract_start_date: string | null;
+    contract_end_date: string | null;
+    account_manager_id: number | null;
+    account_manager?: {
+        name: string;
+    } | null;
+    contacts_count?: number;
+    created_at: string;
+    updated_at: string;
+    full_address?: string;
+};
+
+export type ClientContact = {
+    id: number;
+    client_id: number;
+    first_name: string;
+    last_name: string;
+    name?: string;
+    initials?: string;
+    email: string;
+    phone: string | null;
+    mobile: string | null;
+    job_title: string | null;
+    department: string | null;
+    is_primary_contact: boolean;
+    is_approver: boolean;
+    is_active: boolean;
+    email_verified_at: string | null;
+    last_login_at: string | null;
+    microsoft_id: string | null;
+    provider: string | null;
+    provider_subject: string | null;
+    magic_link_token: string | null;
+    magic_link_expires_at: string | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+    client?: Client;
+};

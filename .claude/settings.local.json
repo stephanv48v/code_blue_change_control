@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell.exe -Command \"Get-Command php | Select-Object -ExpandProperty Source\")",
+      "Bash(powershell.exe -Command \"\\(Get-Command php\\).Source\")",
+      "Bash(\"/c/Users/steph/.config/herd/bin/php.bat\" artisan test)",
+      "Bash(/c/Users/steph/.config/herd/bin/php.bat /c/Users/steph/Herd/code_blue_change_control/artisan test --no-ansi)",
+      "Bash(/c/Users/steph/.config/herd/bin/php.bat /c/Users/steph/Herd/code_blue_change_control/artisan make:migration add_performance_indexes_to_change_requests --no-ansi)"
+    ]
+  }
+}
