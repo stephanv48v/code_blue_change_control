@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\EscalateApprovalJob;
 use App\Models\Approval;
 use App\Notifications\ApprovalReminderNotification;
 
@@ -13,11 +14,16 @@ class ApprovalOrchestrationService
     public function initializeApprovalSla(Approval $approval, ?int $hours = null): void
     {
         $slaHours = $hours ?? self::DEFAULT_SLA_HOURS;
+        $dueAt = now()->addHours($slaHours);
 
         $approval->update([
-            'due_at' => now()->addHours($slaHours),
+            'due_at' => $dueAt,
             'notification_status' => 'sent',
         ]);
+
+        // Dispatch a delayed job to escalate precisely when SLA expires
+        EscalateApprovalJob::dispatch($approval->id)
+            ->delay($dueAt);
     }
 
     public function sendDueSoonReminders(?int $hours = null): int
@@ -66,18 +72,27 @@ class ApprovalOrchestrationService
             ->get();
 
         foreach ($overdueApprovals as $approval) {
-            $approval->update([
-                'escalated_at' => now(),
-                'escalation_level' => (int) $approval->escalation_level + 1,
-                'notification_status' => 'escalated',
-            ]);
-
-            $approval->changeRequest?->logEvent(
-                'approval_escalated',
-                "Approval #{$approval->id} escalated at level {$approval->escalation_level}."
-            );
+            $this->escalateSingleApproval($approval);
         }
 
         return $overdueApprovals->count();
+    }
+
+    /**
+     * Escalate a single overdue approval. Used both by the scheduled sweep
+     * and by the delayed EscalateApprovalJob for precise SLA escalation.
+     */
+    public function escalateSingleApproval(Approval $approval): void
+    {
+        $approval->update([
+            'escalated_at' => now(),
+            'escalation_level' => (int) $approval->escalation_level + 1,
+            'notification_status' => 'escalated',
+        ]);
+
+        $approval->changeRequest?->logEvent(
+            'approval_escalated',
+            "Approval #{$approval->id} escalated at level {$approval->escalation_level}."
+        );
     }
 }

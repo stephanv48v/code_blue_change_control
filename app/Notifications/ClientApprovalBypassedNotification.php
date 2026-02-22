@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\ChangeRequest;
+use App\Notifications\Channels\MicrosoftTeamsChannel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -20,7 +21,16 @@ class ClientApprovalBypassedNotification extends Notification implements ShouldQ
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return static::channels();
+    }
+
+    public static function channels(): array
+    {
+        return array_filter([
+            'mail',
+            'database',
+            config('services.microsoft.teams_webhook_url') ? MicrosoftTeamsChannel::class : null,
+        ]);
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -36,11 +46,36 @@ class ClientApprovalBypassedNotification extends Notification implements ShouldQ
             ->salutation('Regards,' . "\n" . config('app.name'));
     }
 
+    public function toTeams(object $notifiable): array
+    {
+        return [
+            'type' => 'message',
+            'attachments' => [[
+                'contentType' => 'application/vnd.microsoft.card.adaptive',
+                'content' => [
+                    '$schema' => 'http://adaptivecards.io/schemas/adaptive-card.json',
+                    'type' => 'AdaptiveCard',
+                    'version' => '1.4',
+                    'body' => [
+                        ['type' => 'TextBlock', 'size' => 'Medium', 'weight' => 'Bolder', 'text' => "Approval Bypassed: {$this->change->change_id}"],
+                        ['type' => 'TextBlock', 'text' => $this->change->title, 'wrap' => true],
+                        ['type' => 'TextBlock', 'text' => "Bypassed by: {$this->bypassedByName}", 'isSubtle' => true],
+                        ['type' => 'TextBlock', 'text' => "Reason: {$this->reason}", 'wrap' => true],
+                    ],
+                ],
+            ]],
+        ];
+    }
+
     public function toArray(object $notifiable): array
     {
         return [
+            'type' => 'approval_bypassed',
             'change_id' => $this->change->change_id,
+            'title' => $this->change->title,
             'reason' => $this->reason,
+            'bypassed_by' => $this->bypassedByName,
+            'message' => "Approval bypassed for {$this->change->change_id} by {$this->bypassedByName}",
         ];
     }
 }

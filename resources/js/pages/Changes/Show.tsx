@@ -36,6 +36,7 @@ interface Approval {
 }
 
 type ChangeWithRelations = ChangeRequest & {
+    rejection_reason?: string | null;
     client?: { name: string; code: string } | null;
     requester?: { name: string } | null;
     approver?: { name: string } | null;
@@ -78,10 +79,11 @@ const statusColors: Record<string, string> = {
     submitted: 'bg-blue-100 text-blue-800',
     pending_approval: 'bg-yellow-100 text-yellow-800',
     approved: 'bg-green-100 text-green-800',
+    rejected: 'bg-red-100 text-red-800',
     scheduled: 'bg-purple-100 text-purple-800',
     in_progress: 'bg-orange-100 text-orange-800',
     completed: 'bg-emerald-100 text-emerald-800',
-    cancelled: 'bg-red-100 text-red-800',
+    cancelled: 'bg-slate-200 text-slate-600',
 };
 
 const approvalStatusIcons = {
@@ -124,6 +126,16 @@ export default function ChangeShow({ change }: Props) {
         });
     };
 
+    const handleRevise = () => {
+        router.post(`/changes/${change.id}/transition`, {
+            status: 'draft',
+        }, {
+            onSuccess: () => {
+                router.visit(`/changes/${change.id}/edit`);
+            },
+        });
+    };
+
     const handleBypassClientApproval = () => {
         if (!bypassReason.trim()) return;
         router.post(`/changes/${change.id}/bypass-client-approval`, {
@@ -148,6 +160,7 @@ export default function ChangeShow({ change }: Props) {
     const canSubmit = hasEditPermission && change.status === 'draft';
     const pendingApproval = change.status === 'submitted' || change.status === 'pending_approval';
     const canArchive = auth.user?.permissions?.includes('changes.delete') ?? false;
+    const isTerminal = change.status === 'completed' || change.status === 'cancelled';
 
     const pendingClientApprovals = (change.approvals ?? []).filter(
         (a) => a.type === 'client' && a.status === 'pending'
@@ -280,6 +293,62 @@ export default function ChangeShow({ change }: Props) {
                                     </div>
                                 </div>
                             )}
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Rejection Banner — visible when change was rejected, with reason and Revise button */}
+                {change.status === 'rejected' && (
+                    <Card className="border-red-200 bg-red-50/40 dark:border-red-900 dark:bg-red-950/20">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-base text-red-700">
+                                <XCircle className="h-5 w-5" />
+                                Change Request Rejected
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {change.rejection_reason && (
+                                <div className="rounded-md border border-red-200 bg-white/60 p-3">
+                                    <p className="text-sm font-medium text-muted-foreground mb-1">Reason</p>
+                                    <p className="text-sm">{change.rejection_reason}</p>
+                                </div>
+                            )}
+                            {hasEditPermission && (
+                                <div className="flex gap-2">
+                                    <Button
+                                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                                        onClick={handleRevise}
+                                        disabled={processing}
+                                    >
+                                        <Edit className="h-4 w-4 mr-2" />
+                                        Revise & Resubmit
+                                    </Button>
+                                </div>
+                            )}
+                            {!hasEditPermission && (
+                                <p className="text-sm text-muted-foreground">
+                                    Contact a Change Manager to revise and resubmit this change request.
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Standalone Bypass Button — visible when change is approved/scheduled but client approvals are still pending */}
+                {canApprove && !pendingApproval && !isTerminal && change.status !== 'rejected' && hasPendingClientApprovals && (
+                    <Card className="border-orange-200 bg-orange-50/40 dark:border-orange-900 dark:bg-orange-950/20">
+                        <CardContent className="flex items-center justify-between py-4">
+                            <p className="text-sm text-muted-foreground">
+                                {pendingClientApprovals.length} client approval{pendingClientApprovals.length !== 1 ? 's' : ''} still pending
+                            </p>
+                            <Button
+                                variant="outline"
+                                className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                                onClick={() => setShowBypassDialog(true)}
+                            >
+                                <ShieldOff className="h-4 w-4 mr-2" />
+                                Bypass Client Approval
+                            </Button>
                         </CardContent>
                     </Card>
                 )}
@@ -672,7 +741,7 @@ export default function ChangeShow({ change }: Props) {
                             disabled={bypassReason.trim().length < 10}
                         >
                             <ShieldOff className="h-4 w-4 mr-2" />
-                            Bypass &amp; Notify Client
+                            Bypass & Notify Client
                         </Button>
                     </DialogFooter>
                 </DialogContent>

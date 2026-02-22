@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { CalendarClock, FileText, Plus, Search } from 'lucide-react';
+import { CalendarClock, FileText, Plus, Search, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -37,9 +37,15 @@ type Props = {
         status?: string;
         search?: string;
         client?: string;
+        priority?: string;
+        change_type?: string;
+        requester?: string;
+        date_from?: string;
+        date_to?: string;
     };
     statuses?: Record<string, string>;
     clients?: Array<{ id: number; name: string }>;
+    requesters?: Array<{ id: number; name: string }>;
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -67,10 +73,29 @@ const priorityColors: Record<string, string> = {
 };
 
 const ALL_STATUSES_VALUE = '__all_statuses__';
-
 const ALL_CLIENTS_VALUE = '__all_clients__';
+const ALL_PRIORITIES_VALUE = '__all_priorities__';
+const ALL_TYPES_VALUE = '__all_types__';
+const ALL_REQUESTERS_VALUE = '__all_requesters__';
 
-export default function ChangeIndex({ changes, filters, statuses, clients }: Props) {
+const PRIORITIES: Record<string, string> = {
+    low: 'Low',
+    medium: 'Medium',
+    high: 'High',
+    critical: 'Critical',
+};
+
+const CHANGE_TYPES: Record<string, string> = {
+    standard: 'Standard',
+    normal: 'Normal',
+    emergency: 'Emergency',
+    network: 'Network',
+    server_cloud: 'Server / Cloud',
+    identity_access: 'Identity & Access',
+    security_patch: 'Security Patch',
+};
+
+export default function ChangeIndex({ changes, filters, statuses, clients, requesters }: Props) {
     const { auth } = usePage<import('@/types').SharedData>().props;
     const canCreate = auth.user?.permissions?.includes('changes.create') ?? false;
 
@@ -80,6 +105,23 @@ export default function ChangeIndex({ changes, filters, statuses, clients }: Pro
     const changeList = safeChanges.data ?? [];
     const lastPage = safeChanges.last_page ?? safeChanges.meta?.last_page ?? 1;
     const paginationLinks = safeChanges.links ?? safeChanges.meta?.links ?? [];
+
+    const hasAnyFilter = !!(safeFilters.search || safeFilters.status || safeFilters.client || safeFilters.priority || safeFilters.change_type || safeFilters.requester || safeFilters.date_from || safeFilters.date_to);
+
+    /** Build query params from current filters, with optional overrides */
+    const buildQuery = (overrides: Record<string, string | undefined> = {}) => {
+        const merged = { ...safeFilters, ...overrides };
+        const q: Record<string, string> = {};
+        if (merged.search) q.search = merged.search;
+        if (merged.status) q.status = merged.status;
+        if (merged.client) q.client = merged.client;
+        if (merged.priority) q.priority = merged.priority;
+        if (merged.change_type) q.change_type = merged.change_type;
+        if (merged.requester) q.requester = merged.requester;
+        if (merged.date_from) q.date_from = merged.date_from;
+        if (merged.date_to) q.date_to = merged.date_to;
+        return q;
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -112,82 +154,152 @@ export default function ChangeIndex({ changes, filters, statuses, clients }: Pro
                 </div>
 
                 {/* Filters */}
-                <div className="flex flex-wrap gap-3">
-                    <form
-                        className="relative flex-1 max-w-sm"
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            const search = (e.currentTarget.elements.namedItem('search') as HTMLInputElement).value;
-                            const query: Record<string, string> = {};
-                            if (search) query.search = search;
-                            if (safeFilters.status) query.status = safeFilters.status;
-                            if (safeFilters.client) query.client = safeFilters.client;
-                            router.get('/changes', query, { preserveState: true, replace: true });
-                        }}
-                    >
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            name="search"
-                            placeholder="Search changes..."
-                            defaultValue={safeFilters.search}
-                            className="pl-8"
-                        />
-                    </form>
-                    <Select
-                        value={safeFilters.status || ALL_STATUSES_VALUE}
-                        onValueChange={(value) => {
-                            const query: Record<string, string> = {};
-                            if (safeFilters.search) query.search = safeFilters.search;
-                            if (safeFilters.client) query.client = safeFilters.client;
-                            if (value !== ALL_STATUSES_VALUE) query.status = value;
-                            router.get('/changes', query, { preserveState: true, replace: true });
-                        }}
-                    >
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="All Statuses" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value={ALL_STATUSES_VALUE}>All Statuses</SelectItem>
-                            {Object.entries(safeStatuses).map(([value, label]) => (
-                                <SelectItem key={value} value={value}>
-                                    {label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    {(clients ?? []).length > 0 && (
-                        <Select
-                            value={safeFilters.client || ALL_CLIENTS_VALUE}
-                            onValueChange={(value) => {
-                                const query: Record<string, string> = {};
-                                if (safeFilters.search) query.search = safeFilters.search;
-                                if (safeFilters.status) query.status = safeFilters.status;
-                                if (value !== ALL_CLIENTS_VALUE) query.client = value;
-                                router.get('/changes', query, { preserveState: true, replace: true });
+                <div className="space-y-3">
+                    <div className="flex flex-wrap gap-3">
+                        <form
+                            className="relative flex-1 max-w-sm"
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                const search = (e.currentTarget.elements.namedItem('search') as HTMLInputElement).value;
+                                router.get('/changes', buildQuery({ search: search || undefined }), { preserveState: true, replace: true });
                             }}
                         >
-                            <SelectTrigger className="w-[200px]">
-                                <SelectValue placeholder="All Clients" />
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                name="search"
+                                placeholder="Search changes..."
+                                defaultValue={safeFilters.search}
+                                className="pl-8"
+                            />
+                        </form>
+                        <Select
+                            value={safeFilters.status || ALL_STATUSES_VALUE}
+                            onValueChange={(value) => {
+                                router.get('/changes', buildQuery({ status: value !== ALL_STATUSES_VALUE ? value : undefined }), { preserveState: true, replace: true });
+                            }}
+                        >
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="All Statuses" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value={ALL_CLIENTS_VALUE}>All Clients</SelectItem>
-                                {(clients ?? []).map((c) => (
-                                    <SelectItem key={c.id} value={String(c.id)}>
-                                        {c.name}
+                                <SelectItem value={ALL_STATUSES_VALUE}>All Statuses</SelectItem>
+                                {Object.entries(safeStatuses).map(([value, label]) => (
+                                    <SelectItem key={value} value={value}>
+                                        {label}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
-                    )}
-                    {(safeFilters.search || safeFilters.status || safeFilters.client) && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => router.get('/changes', {}, { preserveState: false })}
+                        {(clients ?? []).length > 0 && (
+                            <Select
+                                value={safeFilters.client || ALL_CLIENTS_VALUE}
+                                onValueChange={(value) => {
+                                    router.get('/changes', buildQuery({ client: value !== ALL_CLIENTS_VALUE ? value : undefined }), { preserveState: true, replace: true });
+                                }}
+                            >
+                                <SelectTrigger className="w-[200px]">
+                                    <SelectValue placeholder="All Clients" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value={ALL_CLIENTS_VALUE}>All Clients</SelectItem>
+                                    {(clients ?? []).map((c) => (
+                                        <SelectItem key={c.id} value={String(c.id)}>
+                                            {c.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+                        <Select
+                            value={safeFilters.priority || ALL_PRIORITIES_VALUE}
+                            onValueChange={(value) => {
+                                router.get('/changes', buildQuery({ priority: value !== ALL_PRIORITIES_VALUE ? value : undefined }), { preserveState: true, replace: true });
+                            }}
                         >
-                            Clear filters
-                        </Button>
-                    )}
+                            <SelectTrigger className="w-[160px]">
+                                <SelectValue placeholder="All Priorities" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL_PRIORITIES_VALUE}>All Priorities</SelectItem>
+                                {Object.entries(PRIORITIES).map(([value, label]) => (
+                                    <SelectItem key={value} value={value}>
+                                        {label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex flex-wrap gap-3 items-center">
+                        <Select
+                            value={safeFilters.change_type || ALL_TYPES_VALUE}
+                            onValueChange={(value) => {
+                                router.get('/changes', buildQuery({ change_type: value !== ALL_TYPES_VALUE ? value : undefined }), { preserveState: true, replace: true });
+                            }}
+                        >
+                            <SelectTrigger className="w-[190px]">
+                                <SelectValue placeholder="All Types" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL_TYPES_VALUE}>All Types</SelectItem>
+                                {Object.entries(CHANGE_TYPES).map(([value, label]) => (
+                                    <SelectItem key={value} value={value}>
+                                        {label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {(requesters ?? []).length > 0 && (
+                            <Select
+                                value={safeFilters.requester || ALL_REQUESTERS_VALUE}
+                                onValueChange={(value) => {
+                                    router.get('/changes', buildQuery({ requester: value !== ALL_REQUESTERS_VALUE ? value : undefined }), { preserveState: true, replace: true });
+                                }}
+                            >
+                                <SelectTrigger className="w-[200px]">
+                                    <SelectValue placeholder="All Requesters" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value={ALL_REQUESTERS_VALUE}>All Requesters</SelectItem>
+                                    {(requesters ?? []).map((r) => (
+                                        <SelectItem key={r.id} value={String(r.id)}>
+                                            {r.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">Created:</span>
+                            <Input
+                                type="date"
+                                className="w-[150px]"
+                                value={safeFilters.date_from ?? ''}
+                                onChange={(e) => {
+                                    router.get('/changes', buildQuery({ date_from: e.target.value || undefined }), { preserveState: true, replace: true });
+                                }}
+                            />
+                            <span className="text-sm text-muted-foreground">to</span>
+                            <Input
+                                type="date"
+                                className="w-[150px]"
+                                value={safeFilters.date_to ?? ''}
+                                onChange={(e) => {
+                                    router.get('/changes', buildQuery({ date_to: e.target.value || undefined }), { preserveState: true, replace: true });
+                                }}
+                            />
+                        </div>
+                        {hasAnyFilter && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-muted-foreground"
+                                onClick={() => router.get('/changes', {}, { preserveState: false })}
+                            >
+                                <X className="h-3 w-3 mr-1" />
+                                Clear all filters
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Changes List */}
@@ -196,7 +308,7 @@ export default function ChangeIndex({ changes, filters, statuses, clients }: Pro
                         <Card>
                             <CardContent className="flex flex-col items-center justify-center py-12">
                                 <FileText className="h-12 w-12 text-muted-foreground" />
-                                {safeFilters.search || safeFilters.status || safeFilters.client ? (
+                                {hasAnyFilter ? (
                                     <>
                                         <h3 className="mt-4 text-lg font-medium">No changes match your filters</h3>
                                         <p className="text-sm text-muted-foreground">

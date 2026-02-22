@@ -78,7 +78,8 @@ const VALID_TRANSITIONS: Record<string, { value: string; label: string }[]> = {
         { value: 'cancelled', label: 'Cancelled' },
     ],
     submitted: [
-        { value: 'pending_approval', label: 'Pending Approval' },
+        { value: 'approved', label: 'Approved' },
+        { value: 'rejected', label: 'Rejected' },
         { value: 'cancelled', label: 'Cancelled' },
     ],
     pending_approval: [

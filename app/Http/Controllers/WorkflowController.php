@@ -26,7 +26,7 @@ class WorkflowController extends Controller
         $this->authorize('transition', $change);
 
         $validated = $request->validate([
-            'status' => 'required|in:submitted,approved,rejected,scheduled,in_progress,completed,cancelled',
+            'status' => 'required|in:draft,submitted,approved,rejected,scheduled,in_progress,completed,cancelled',
             'reason' => 'nullable|string|max:1000',
         ]);
 
