@@ -201,7 +201,7 @@ export default function Dashboard({ user, kpis }: Props) {
                             value={kpis.integrations_active}
                             description="Active external system connections"
                             color="blue"
-                            href="/integrations"
+                            href="/admin/integrations"
                         />
                         <KpiCard
                             icon={FileText}
@@ -209,7 +209,7 @@ export default function Dashboard({ user, kpis }: Props) {
                             value={kpis.assets_managed}
                             description={`${kpis.sync_failures_24h} sync failures in last 24h`}
                             color="purple"
-                            href="/integrations"
+                            href="/admin/integrations"
                         />
                         <KpiCard
                             icon={Clock}
