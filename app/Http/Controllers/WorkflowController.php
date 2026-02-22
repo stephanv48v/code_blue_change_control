@@ -103,6 +103,8 @@ class WorkflowController extends Controller
      */
     public function conflicts(Request $request, ChangeRequest $change): Response
     {
+        $this->authorize('view', $change);
+
         $validated = $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date',

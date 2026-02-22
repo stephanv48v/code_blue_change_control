@@ -370,30 +370,55 @@ class ChangeRequestController extends Controller
             ->where('is_active', true)
             ->exists();
 
-        // High-risk with no client approvers → route directly to CAB
-        if (!$hasClientApprovers && $requiresCab) {
+        $requiresClient = ($policyDecision['requires_client_approval'] ?? true) && $hasClientApprovers;
+
+        // No client approval needed (by policy or no approvers) → route to CAB or approve
+        if (!$requiresClient) {
+            if ($requiresCab) {
+                $change->update([
+                    'status'                => ChangeRequest::STATUS_PENDING_APPROVAL,
+                    'risk_score'            => $policyDecision['risk_score'],
+                    'policy_decision'       => $policyDecision,
+                    'requires_cab_approval' => true,
+                ]);
+
+                $approvalService->ensureCabApproval($change);
+
+                \App\Models\AuditEvent::log(
+                    $change,
+                    'status_changed',
+                    ['status' => 'draft'],
+                    ['status' => 'pending_approval'],
+                    'Change request submitted. Routed to CAB approval.'
+                );
+
+                return redirect()->route('changes.show', $change)
+                    ->with('message', 'Change request submitted. Awaiting CAB approval.');
+            }
+
+            // No approvals needed at all → approve immediately
             $change->update([
-                'status'                => ChangeRequest::STATUS_PENDING_APPROVAL,
+                'status'                => ChangeRequest::STATUS_APPROVED,
                 'risk_score'            => $policyDecision['risk_score'],
                 'policy_decision'       => $policyDecision,
-                'requires_cab_approval' => true,
+                'requires_cab_approval' => false,
+                'approved_by'           => $request->user()->id,
+                'approved_at'           => now(),
             ]);
-
-            $approvalService->ensureCabApproval($change);
 
             \App\Models\AuditEvent::log(
                 $change,
                 'status_changed',
                 ['status' => 'draft'],
-                ['status' => 'pending_approval'],
-                'Change request submitted. Routed to CAB approval.'
+                ['status' => 'approved'],
+                'Change request approved — no client or CAB approval required.'
             );
 
             return redirect()->route('changes.show', $change)
-                ->with('message', 'Change request submitted. Awaiting CAB approval.');
+                ->with('message', 'Change request approved. No additional approval required.');
         }
 
-        // Default path: submitted, notify client approvers
+        // Client approval path: submitted, notify client approvers
         $change->update([
             'status'                => ChangeRequest::STATUS_SUBMITTED,
             'risk_score'            => $policyDecision['risk_score'],

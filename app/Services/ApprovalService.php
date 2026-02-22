@@ -168,6 +168,19 @@ class ApprovalService
      */
     public function checkClientApprovalsComplete(ChangeRequest $changeRequest): void
     {
+        // Re-read status to catch concurrent rejection by another approver
+        $changeRequest->refresh();
+
+        // Only advance workflow from states where client approvals are actively awaited.
+        // Any other status (approved, scheduled, in_progress, completed, rejected, cancelled)
+        // should not be regressed by a late-arriving approval resolution.
+        if (!in_array($changeRequest->status, [
+            ChangeRequest::STATUS_SUBMITTED,
+            ChangeRequest::STATUS_PENDING_APPROVAL,
+        ], true)) {
+            return;
+        }
+
         $pendingCount = Approval::where('change_request_id', $changeRequest->id)
             ->where('type', Approval::TYPE_CLIENT)
             ->where('status', Approval::STATUS_PENDING)

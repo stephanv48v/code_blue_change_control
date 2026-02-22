@@ -78,7 +78,7 @@ class ExportController extends Controller
             return '';
         }
 
-        if (preg_match('/^[=+\-@\t]/', $value)) {
+        if (preg_match('/^\s*[=+\-@\t]/', $value)) {
             return "'" . $value;
         }
 

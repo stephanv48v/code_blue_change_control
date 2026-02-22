@@ -66,7 +66,7 @@ Route::get('/login/local', [LocalAuthController::class, 'showLogin'])
 
 Route::post('/login/local', [LocalAuthController::class, 'login'])
     ->name('login.local.post')
-    ->middleware('guest');
+    ->middleware(['guest', 'throttle:5,1']);
 
 // Logout
 Route::post('/logout', [LocalAuthController::class, 'logout'])

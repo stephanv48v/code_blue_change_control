@@ -51,7 +51,7 @@ export default function MyScheduledChanges({ changes, range }: Props) {
                 date: startDate,
                 title: `${change.change_id} - ${change.title}`,
                 description: `${change.client?.name ?? 'Unknown Client'} • ${change.participant_role || 'Participant'} • ${scheduleLabel}`,
-                badge: change.status.replace('_', ' '),
+                badge: change.status.replaceAll('_', ' '),
                 tone: statusTone[change.status] ?? 'default',
                 href: `/changes/${change.id}`,
             };
@@ -141,7 +141,7 @@ export default function MyScheduledChanges({ changes, range }: Props) {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Badge variant="outline" className="capitalize">
-                                            {change.status.replace('_', ' ')}
+                                            {change.status.replaceAll('_', ' ')}
                                         </Badge>
                                         <Badge variant="secondary" className="capitalize">
                                             {change.priority}

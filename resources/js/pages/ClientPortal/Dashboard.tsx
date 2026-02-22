@@ -35,10 +35,11 @@ const statusColors: Record<string, string> = {
     submitted: 'bg-blue-100 text-blue-800',
     pending_approval: 'bg-yellow-100 text-yellow-800',
     approved: 'bg-green-100 text-green-800',
+    rejected: 'bg-red-100 text-red-800',
     scheduled: 'bg-purple-100 text-purple-800',
     in_progress: 'bg-orange-100 text-orange-800',
     completed: 'bg-emerald-100 text-emerald-800',
-    cancelled: 'bg-red-100 text-red-800',
+    cancelled: 'bg-slate-200 text-slate-600',
 };
 
 const priorityColors: Record<string, string> = {
@@ -225,7 +226,7 @@ export default function ClientPortalDashboard({ contact, stats, recent_changes }
                                                     {change.change_id}
                                                 </span>
                                                 <Badge className={`${statusColors[change.status] || 'bg-slate-100'} text-xs`}>
-                                                    {change.status.replace('_', ' ')}
+                                                    {change.status.replaceAll('_', ' ')}
                                                 </Badge>
                                                 <Badge className={`${priorityColors[change.priority] || 'bg-slate-100'} text-xs`}>
                                                     {change.priority}

@@ -60,8 +60,11 @@ class AppServiceProvider extends ServiceProvider
             if (! empty($secret)) {
                 config(['services.microsoft.client_secret' => decrypt($secret)]);
             }
-        } catch (\Throwable) {
-            // DB unavailable during artisan commands or migrations — silently skip
+        } catch (\Illuminate\Database\QueryException) {
+            // DB unavailable during artisan commands or migrations — skip
+        } catch (\Throwable $e) {
+            // Decrypt or other failures should be logged so they're actionable
+            \Illuminate\Support\Facades\Log::warning('Failed to load app settings: ' . $e->getMessage());
         }
     }
 

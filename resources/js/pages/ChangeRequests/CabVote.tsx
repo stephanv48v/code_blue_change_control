@@ -63,7 +63,7 @@ export default function CabVote({ changeRequest, voteSummary, userVote }: Props)
         { title: 'Dashboard', href: dashboard().url },
         { title: 'CAB Agenda', href: '/cab-agenda' },
         { title: changeRequest.change_id, href: `/changes/${changeRequest.id}` },
-        { title: 'CAB Vote', href: `/cab-agenda/changes/${changeRequest.id}/vote` },
+        { title: 'CAB Vote', href: `/cab-agenda/vote/${changeRequest.id}` },
     ];
 
     const { data, setData, post, processing, errors } = useForm({
@@ -81,7 +81,7 @@ export default function CabVote({ changeRequest, voteSummary, userVote }: Props)
             return;
         }
 
-        post(`/cab-agenda/changes/${changeRequest.id}/vote`);
+        post(`/cab-agenda/vote/${changeRequest.id}`);
     };
 
     return (
