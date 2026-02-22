@@ -61,10 +61,11 @@ const statusColors: Record<string, string> = {
     submitted: 'bg-blue-100 text-blue-800',
     pending_approval: 'bg-yellow-100 text-yellow-800',
     approved: 'bg-green-100 text-green-800',
+    rejected: 'bg-red-100 text-red-800',
     scheduled: 'bg-purple-100 text-purple-800',
     in_progress: 'bg-orange-100 text-orange-800',
     completed: 'bg-emerald-100 text-emerald-800',
-    cancelled: 'bg-red-100 text-red-800',
+    cancelled: 'bg-slate-200 text-slate-600',
 };
 
 const priorityColors: Record<string, string> = {
@@ -112,92 +113,121 @@ export default function Dashboard({ user, kpis }: Props) {
                     </div>
                 </div>
 
-                {/* KPI Cards */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <KpiCard
-                        icon={FileText}
-                        title="Changes This Month"
-                        value={kpis.changes_this_month}
-                        description="New change requests created"
-                        color="blue"
-                    />
-                    <KpiCard
-                        icon={Clock}
-                        title="Pending Approvals"
-                        value={kpis.pending_approvals}
-                        description="Awaiting client or CAB approval"
-                        color="yellow"
-                    />
-                    <KpiCard
-                        icon={Calendar}
-                        title="Scheduled This Month"
-                        value={kpis.scheduled_this_month}
-                        description="Changes planned for implementation"
-                        color="purple"
-                    />
-                    <KpiCard
-                        icon={TrendingUp}
-                        title="Completion Rate"
-                        value={`${kpis.completion_rate}%`}
-                        description="Successfully completed changes"
-                        color="green"
-                    />
-                    <KpiCard
-                        icon={AlertCircle}
-                        title="CAB Required"
-                        value={kpis.changes_requiring_cab}
-                        description="Open changes requiring CAB"
-                        color="yellow"
-                    />
-                    <KpiCard
-                        icon={User}
-                        title="Integrations"
-                        value={kpis.integrations_active}
-                        description="Active external system connections"
-                        color="blue"
-                    />
-                    <KpiCard
-                        icon={FileText}
-                        title="Managed Assets"
-                        value={kpis.assets_managed}
-                        description={`${kpis.sync_failures_24h} sync failures in last 24h`}
-                        color="purple"
-                    />
-                    <KpiCard
-                        icon={AlertCircle}
-                        title="Overdue Approvals"
-                        value={kpis.overdue_approvals}
-                        description="Pending approvals past SLA"
-                        color="red"
-                    />
-                    <KpiCard
-                        icon={Clock}
-                        title="Approval Reminders"
-                        value={kpis.approval_reminders_24h}
-                        description="Reminder events in last 24h"
-                        color="yellow"
-                    />
-                    <KpiCard
-                        icon={User}
-                        title="Comms Sent (24h)"
-                        value={kpis.communications_sent_24h}
-                        description="Client communication dispatches"
-                        color="blue"
-                    />
-                    <KpiCard
-                        icon={CheckCircle}
-                        title="PIR This Month"
-                        value={kpis.pir_completed_this_month}
-                        description="Post-implementation reviews completed"
-                        color="green"
-                    />
-                    <KpiCard
-                        icon={TrendingUp}
-                        title="Runbook Completion"
-                        value={`${kpis.runbook_completion_rate}%`}
-                        description="Completed runbook steps"
-                        color="purple"
-                    />
+                {/* Change Management KPIs */}
+                <div>
+                    <h2 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Change Management</h2>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        <KpiCard
+                            icon={FileText}
+                            title="Changes This Month"
+                            value={kpis.changes_this_month}
+                            description="New change requests created"
+                            color="blue"
+                            href="/changes"
+                        />
+                        <KpiCard
+                            icon={Clock}
+                            title="Pending Approvals"
+                            value={kpis.pending_approvals}
+                            description="Awaiting client or CAB approval"
+                            color="yellow"
+                            href="/changes?status=pending_approval"
+                        />
+                        <KpiCard
+                            icon={Calendar}
+                            title="Scheduled This Month"
+                            value={kpis.scheduled_this_month}
+                            description="Changes planned for implementation"
+                            color="purple"
+                            href="/changes?status=scheduled"
+                        />
+                        <KpiCard
+                            icon={TrendingUp}
+                            title="Completion Rate"
+                            value={`${kpis.completion_rate}%`}
+                            description="Successfully completed changes"
+                            color="green"
+                            href="/changes?status=completed"
+                        />
+                    </div>
+                </div>
+
+                {/* Approvals & Operations KPIs */}
+                <div>
+                    <h2 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Approvals & Operations</h2>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        <KpiCard
+                            icon={AlertCircle}
+                            title="CAB Required"
+                            value={kpis.changes_requiring_cab}
+                            description="Open changes requiring CAB"
+                            color="yellow"
+                            href="/cab-agenda"
+                        />
+                        <KpiCard
+                            icon={AlertCircle}
+                            title="Overdue Approvals"
+                            value={kpis.overdue_approvals}
+                            description="Pending approvals past SLA"
+                            color="red"
+                            href="/changes?status=pending_approval"
+                        />
+                        <KpiCard
+                            icon={CheckCircle}
+                            title="PIR This Month"
+                            value={kpis.pir_completed_this_month}
+                            description="Post-implementation reviews completed"
+                            color="green"
+                            href="/changes?status=completed"
+                        />
+                        <KpiCard
+                            icon={TrendingUp}
+                            title="Runbook Completion"
+                            value={`${kpis.runbook_completion_rate}%`}
+                            description="Completed runbook steps"
+                            color="purple"
+                            href="/changes?status=in_progress"
+                        />
+                    </div>
+                </div>
+
+                {/* Integrations & Activity KPIs */}
+                <div>
+                    <h2 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Integrations & Activity</h2>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        <KpiCard
+                            icon={User}
+                            title="Integrations"
+                            value={kpis.integrations_active}
+                            description="Active external system connections"
+                            color="blue"
+                            href="/admin/integrations"
+                        />
+                        <KpiCard
+                            icon={FileText}
+                            title="Managed Assets"
+                            value={kpis.assets_managed}
+                            description={`${kpis.sync_failures_24h} sync failures in last 24h`}
+                            color="purple"
+                            href="/admin/integrations"
+                        />
+                        <KpiCard
+                            icon={Clock}
+                            title="Approval Reminders"
+                            value={kpis.approval_reminders_24h}
+                            description="Reminder events in last 24h"
+                            color="yellow"
+                            href="/changes?status=submitted"
+                        />
+                        <KpiCard
+                            icon={User}
+                            title="Comms Sent (24h)"
+                            value={kpis.communications_sent_24h}
+                            description="Client communication dispatches"
+                            color="blue"
+                            href="/changes"
+                        />
+                    </div>
                 </div>
 
                 {/* Main Content Grid */}
@@ -277,12 +307,13 @@ export default function Dashboard({ user, kpis }: Props) {
                         <CardContent>
                             <div className="flex flex-wrap gap-2">
                                 {Object.entries(kpis.by_status).map(([status, count]) => (
-                                    <Badge
-                                        key={status}
-                                        className={`${statusColors[status] || 'bg-slate-100'} text-sm px-3 py-1`}
-                                    >
-                                        {status.replace('_', ' ')}: {count}
-                                    </Badge>
+                                    <Link key={status} href={`/changes?status=${status}`}>
+                                        <Badge
+                                            className={`${statusColors[status] || 'bg-slate-100'} text-sm px-3 py-1 cursor-pointer hover:opacity-80 transition-opacity`}
+                                        >
+                                            {status.replaceAll('_', ' ')}: {count}
+                                        </Badge>
+                                    </Link>
                                 ))}
                             </div>
                         </CardContent>
@@ -293,18 +324,20 @@ export default function Dashboard({ user, kpis }: Props) {
     );
 }
 
-function KpiCard({ 
-    icon: Icon, 
-    title, 
-    value, 
-    description, 
-    color 
-}: { 
+function KpiCard({
+    icon: Icon,
+    title,
+    value,
+    description,
+    color,
+    href,
+}: {
     icon: React.ElementType;
     title: string;
     value: string | number;
     description: string;
     color: 'blue' | 'yellow' | 'purple' | 'green' | 'red';
+    href?: string;
 }) {
     const colorClasses = {
         blue: 'bg-blue-50 text-blue-600',
@@ -314,22 +347,32 @@ function KpiCard({
         red: 'bg-red-50 text-red-600',
     };
 
-    return (
-        <Card>
-            <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
-                        <Icon className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <p className="text-sm text-muted-foreground">{title}</p>
-                        <p className="text-2xl font-bold">{value}</p>
-                    </div>
+    const content = (
+        <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
+                    <Icon className="h-6 w-6" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-3">{description}</p>
-            </CardContent>
-        </Card>
+                <div>
+                    <p className="text-sm text-muted-foreground">{title}</p>
+                    <p className="text-2xl font-bold">{value}</p>
+                </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">{description}</p>
+        </CardContent>
     );
+
+    if (href) {
+        return (
+            <Link href={href}>
+                <Card className="hover:shadow-md hover:border-primary/30 transition-all cursor-pointer">
+                    {content}
+                </Card>
+            </Link>
+        );
+    }
+
+    return <Card>{content}</Card>;
 }
 
 function ChangeRow({ change }: { change: Change }) {
@@ -340,7 +383,7 @@ function ChangeRow({ change }: { change: Change }) {
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-muted-foreground">{change.change_id}</span>
                         <Badge className={`${statusColors[change.status] || 'bg-slate-100'} text-xs`}>
-                            {change.status.replace('_', ' ')}
+                            {change.status.replaceAll('_', ' ')}
                         </Badge>
                     </div>
                     <p className="font-medium truncate mt-1">{change.title}</p>

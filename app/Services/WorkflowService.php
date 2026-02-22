@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Approval;
 use App\Models\CabMeeting;
 use App\Models\ChangeRequest;
+use App\Models\ExternalAsset;
 use App\Models\WorkflowEvent;
 use App\Models\User;
 use Carbon\Carbon;
@@ -69,6 +70,16 @@ class WorkflowService
                 case 'approved':
                     $updates['approved_at'] = now();
                     $updates['approved_by'] = $user?->id;
+                    // Only resolve CAB approval records — client approvals require
+                    // explicit bypass so the client is properly notified.
+                    Approval::where('change_request_id', $change->id)
+                        ->where('type', Approval::TYPE_CAB)
+                        ->where('status', Approval::STATUS_PENDING)
+                        ->update([
+                            'status' => Approval::STATUS_APPROVED,
+                            'responded_at' => now(),
+                            'comments' => 'Resolved by approval transition' . ($user ? " ({$user->name})" : ''),
+                        ]);
                     break;
                 case 'scheduled':
                     if (!$change->scheduled_start_date) {
@@ -80,6 +91,9 @@ class WorkflowService
                     break;
                 case 'completed':
                     $updates['actual_end_date'] = now();
+                    break;
+                case 'rejected':
+                    $updates['rejection_reason'] = $reason ?? 'Rejected by ' . ($user?->name ?? 'system');
                     break;
                 case 'cancelled':
                     $updates['rejection_reason'] = $reason ?? 'Cancelled by ' . ($user?->name ?? 'system');
@@ -132,6 +146,15 @@ class WorkflowService
                 throw new \Exception("Scheduling conflicts detected with: {$conflictIds}");
             }
 
+            // Check for asset/CI conflicts
+            $assetConflicts = $this->findAssetConflicts($change, $startDate, $endDate);
+            if ($assetConflicts->isNotEmpty()) {
+                $conflictSummary = $assetConflicts->map(function ($conflict) {
+                    return "{$conflict['asset_name']} (used by {$conflict['change_id']})";
+                })->implode(', ');
+                throw new \Exception("Asset scheduling conflicts detected: {$conflictSummary}");
+            }
+
             if ($change->hasPendingCabConditions()) {
                 throw new \Exception('Requester must confirm CAB conditions before scheduling.');
             }
@@ -177,6 +200,61 @@ class WorkflowService
         }
 
         return $query->get();
+    }
+
+    /**
+     * Find asset/CI conflicts: other scheduled/in-progress changes that share
+     * the same external assets during the given time window.
+     */
+    public function findAssetConflicts(ChangeRequest $change, CarbonInterface $startDate, CarbonInterface $endDate): Collection
+    {
+        $assetIds = $change->externalAssets()->pluck('external_assets.id');
+
+        if ($assetIds->isEmpty()) {
+            return collect();
+        }
+
+        // Find other changes that reference the same assets and have overlapping schedules
+        $conflictingChanges = ChangeRequest::query()
+            ->where('id', '!=', $change->id)
+            ->whereIn('status', [ChangeRequest::STATUS_SCHEDULED, ChangeRequest::STATUS_IN_PROGRESS])
+            ->whereHas('externalAssets', function ($query) use ($assetIds) {
+                $query->whereIn('external_assets.id', $assetIds);
+            })
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('scheduled_start_date', [$startDate, $endDate])
+                  ->orWhereBetween('scheduled_end_date', [$startDate, $endDate])
+                  ->orWhere(function ($sq) use ($startDate, $endDate) {
+                      $sq->where('scheduled_start_date', '<=', $startDate)
+                         ->where('scheduled_end_date', '>=', $endDate);
+                  });
+            })
+            ->with('externalAssets')
+            ->get();
+
+        if ($conflictingChanges->isEmpty()) {
+            return collect();
+        }
+
+        // Build a detailed list of which assets conflict with which changes
+        $conflicts = collect();
+        foreach ($conflictingChanges as $conflicting) {
+            $sharedAssets = $conflicting->externalAssets
+                ->whereIn('id', $assetIds);
+
+            foreach ($sharedAssets as $asset) {
+                $conflicts->push([
+                    'asset_id' => $asset->id,
+                    'asset_name' => $asset->name ?? $asset->hostname ?? "Asset #{$asset->id}",
+                    'change_id' => $conflicting->change_id,
+                    'change_request_id' => $conflicting->id,
+                    'scheduled_start' => $conflicting->scheduled_start_date?->toIso8601String(),
+                    'scheduled_end' => $conflicting->scheduled_end_date?->toIso8601String(),
+                ]);
+            }
+        }
+
+        return $conflicts;
     }
 
     /**

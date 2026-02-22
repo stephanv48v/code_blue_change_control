@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Approval;
+use App\Notifications\Channels\MicrosoftTeamsChannel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -16,7 +17,16 @@ class ApprovalRequestNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return static::channels();
+    }
+
+    public static function channels(): array
+    {
+        return array_filter([
+            'mail',
+            'database',
+            config('services.microsoft.teams_webhook_url') ? MicrosoftTeamsChannel::class : null,
+        ]);
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -37,11 +47,42 @@ class ApprovalRequestNotification extends Notification implements ShouldQueue
             ->salutation('Regards,' . "\n" . config('app.name'));
     }
 
+    public function toTeams(object $notifiable): array
+    {
+        $change = $this->approval->changeRequest;
+
+        return [
+            'type' => 'message',
+            'attachments' => [[
+                'contentType' => 'application/vnd.microsoft.card.adaptive',
+                'content' => [
+                    '$schema' => 'http://adaptivecards.io/schemas/adaptive-card.json',
+                    'type' => 'AdaptiveCard',
+                    'version' => '1.4',
+                    'body' => [
+                        ['type' => 'TextBlock', 'size' => 'Medium', 'weight' => 'Bolder', 'text' => "Approval Requested: {$change->change_id}"],
+                        ['type' => 'TextBlock', 'text' => $change->title, 'wrap' => true],
+                        ['type' => 'FactSet', 'facts' => [
+                            ['title' => 'Priority', 'value' => ucfirst($change->priority)],
+                            ['title' => 'Risk', 'value' => ucfirst($change->risk_level ?? 'unspecified')],
+                        ]],
+                    ],
+                ],
+            ]],
+        ];
+    }
+
     public function toArray(object $notifiable): array
     {
+        $change = $this->approval->changeRequest;
+
         return [
+            'type' => 'approval_requested',
             'approval_id' => $this->approval->id,
-            'change_id' => $this->approval->changeRequest?->change_id,
+            'change_id' => $change?->change_id,
+            'title' => $change?->title,
+            'priority' => $change?->priority,
+            'message' => "Approval requested for {$change?->change_id}: {$change?->title}",
         ];
     }
 }

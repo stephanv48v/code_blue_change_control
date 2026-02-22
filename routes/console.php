@@ -68,4 +68,4 @@ Artisan::command('approvals:orchestrate', function () {
 
 Schedule::command('integrations:sync')->everyFifteenMinutes();
 Schedule::command('integrations:retry-failed')->everyFifteenMinutes();
-Schedule::command('approvals:orchestrate')->hourly();
+Schedule::command('approvals:orchestrate')->everyMinute();

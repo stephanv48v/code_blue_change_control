@@ -28,16 +28,9 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    'slack' => [
-        'notifications' => [
-            'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
-            'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
-        ],
-    ],
-
     /*
     |--------------------------------------------------------------------------
-    | Microsoft Entra ID (Azure AD) SSO Configuration
+    | Microsoft Entra ID (Azure AD) SSO & Teams Configuration
     |--------------------------------------------------------------------------
     */
     'microsoft' => [
@@ -47,6 +40,7 @@ return [
         'tenant' => env('MICROSOFT_TENANT_ID'),
         'auth_url' => env('MICROSOFT_AUTH_URL', 'https://login.microsoftonline.com/common'),
         'include_tenant_info' => true,
+        'teams_webhook_url' => env('MICROSOFT_TEAMS_WEBHOOK_URL'),
     ],
 
     /*

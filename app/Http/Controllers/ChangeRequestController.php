@@ -41,6 +41,26 @@ class ChangeRequestController extends Controller
             $query->where('client_id', $request->input('client'));
         }
 
+        if ($request->filled('priority')) {
+            $query->where('priority', $request->input('priority'));
+        }
+
+        if ($request->filled('change_type')) {
+            $query->where('change_type', $request->input('change_type'));
+        }
+
+        if ($request->filled('requester')) {
+            $query->where('requester_id', $request->input('requester'));
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->input('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->input('date_to'));
+        }
+
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
@@ -55,10 +75,16 @@ class ChangeRequestController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        $requesters = User::query()
+            ->whereIn('id', ChangeRequest::select('requester_id')->distinct())
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         return Inertia::render('Changes/Index', [
             'changes' => $changes,
-            'filters' => $request->only(['status', 'client', 'search']),
+            'filters' => $request->only(['status', 'client', 'search', 'priority', 'change_type', 'requester', 'date_from', 'date_to']),
             'clients' => $clients,
+            'requesters' => $requesters,
             'statuses' => [
                 'draft' => 'Draft',
                 'submitted' => 'Submitted',
@@ -781,6 +807,9 @@ class ChangeRequestController extends Controller
             $bypassComment,
             $request->user()->id
         );
+
+        // Advance the workflow now that all client approvals are resolved
+        app(ApprovalService::class)->checkClientApprovalsComplete($change->fresh());
 
         return redirect()->route('changes.show', $change)
             ->with('message', 'Client approval bypassed. The client has been notified by email.');

@@ -9,11 +9,13 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ApprovalReminderNotification extends Notification implements ShouldQueue
+class ApprovalEscalatedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(private readonly Approval $approval) {}
+    public function __construct(
+        private readonly Approval $approval
+    ) {}
 
     public function via(object $notifiable): array
     {
@@ -32,24 +34,23 @@ class ApprovalReminderNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $change = $this->approval->changeRequest;
-        $portalUrl = url('/portal/approvals/' . $this->approval->id);
-        $dueAt = $this->approval->due_at?->format('D, d M Y H:i T');
+        $level = $this->approval->escalation_level;
 
         return (new MailMessage)
-            ->subject("Reminder: Approval Required — {$change->change_id}")
-            ->greeting("Hello {$notifiable->first_name},")
-            ->line("This is a reminder that your approval is required and the deadline is approaching.")
+            ->subject("ESCALATION (Level {$level}): Overdue Approval — {$change->change_id}")
+            ->greeting('Attention,')
+            ->line("An approval for the following change request is overdue and has been escalated to level {$level}.")
             ->line("**{$change->change_id}: {$change->title}**")
-            ->when($dueAt, fn ($mail) => $mail->line("Response required by: **{$dueAt}**"))
-            ->action('Review Now', $portalUrl)
-            ->line('If you have already responded, please disregard this message.')
+            ->line("Priority: " . ucfirst($change->priority) . " | Risk: " . ucfirst($change->risk_level ?? 'unspecified'))
+            ->line("Original deadline: " . ($this->approval->due_at?->format('D, d M Y H:i T') ?? 'Not set'))
+            ->line('Please take immediate action to resolve this overdue approval.')
             ->salutation('Regards,' . "\n" . config('app.name'));
     }
 
     public function toTeams(object $notifiable): array
     {
         $change = $this->approval->changeRequest;
-        $dueAt = $this->approval->due_at?->format('H:i T');
+        $level = $this->approval->escalation_level;
 
         return [
             'type' => 'message',
@@ -60,9 +61,13 @@ class ApprovalReminderNotification extends Notification implements ShouldQueue
                     'type' => 'AdaptiveCard',
                     'version' => '1.4',
                     'body' => [
-                        ['type' => 'TextBlock', 'size' => 'Medium', 'weight' => 'Bolder', 'color' => 'Warning', 'text' => "Reminder: Approval Deadline Approaching"],
+                        ['type' => 'TextBlock', 'size' => 'Medium', 'weight' => 'Bolder', 'color' => 'Attention', 'text' => "ESCALATION (Level {$level}): Overdue Approval"],
                         ['type' => 'TextBlock', 'text' => "{$change->change_id} — {$change->title}", 'wrap' => true],
-                        ['type' => 'TextBlock', 'text' => "Due: {$dueAt}", 'isSubtle' => true],
+                        ['type' => 'FactSet', 'facts' => [
+                            ['title' => 'Priority', 'value' => ucfirst($change->priority)],
+                            ['title' => 'Risk', 'value' => ucfirst($change->risk_level ?? 'unspecified')],
+                            ['title' => 'Deadline', 'value' => $this->approval->due_at?->format('D, d M Y H:i T') ?? 'Not set'],
+                        ]],
                     ],
                 ],
             ]],
@@ -74,12 +79,12 @@ class ApprovalReminderNotification extends Notification implements ShouldQueue
         $change = $this->approval->changeRequest;
 
         return [
-            'type' => 'approval_reminder',
+            'type' => 'approval_escalated',
             'approval_id' => $this->approval->id,
             'change_id' => $change?->change_id,
             'title' => $change?->title,
-            'due_at' => $this->approval->due_at?->toIso8601String(),
-            'message' => "Reminder: Approval deadline approaching for {$change?->change_id}",
+            'escalation_level' => $this->approval->escalation_level,
+            'message' => "Approval overdue for {$change?->change_id} (escalation level {$this->approval->escalation_level})",
         ];
     }
 }
