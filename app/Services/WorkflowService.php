@@ -324,16 +324,14 @@ class WorkflowService
     public function getPendingCabReview(): Collection
     {
         return ChangeRequest::with(['client', 'requester'])
+            ->where('status', ChangeRequest::STATUS_PENDING_APPROVAL)
             ->where(function ($query) {
-                $query->where(function ($pendingApprovalQuery) {
-                    $pendingApprovalQuery
-                        ->where('status', ChangeRequest::STATUS_PENDING_APPROVAL)
-                        ->where('requires_cab_approval', true);
-                })->orWhereHas('approvals', function ($approvalQuery) {
-                    $approvalQuery
-                        ->where('type', Approval::TYPE_CAB)
-                        ->where('status', Approval::STATUS_PENDING);
-                });
+                $query->where('requires_cab_approval', true)
+                    ->orWhereHas('approvals', function ($approvalQuery) {
+                        $approvalQuery
+                            ->where('type', Approval::TYPE_CAB)
+                            ->where('status', Approval::STATUS_PENDING);
+                    });
             })
             ->orderBy('created_at')
             ->get();
@@ -344,11 +342,14 @@ class WorkflowService
      */
     public function generateCabAgenda(CarbonInterface $meetingDate): array
     {
-        $pendingChanges = $this->getPendingCabReview();
         $upcomingChanges = $this->getUpcomingChanges($meetingDate, $meetingDate->copy()->addWeek());
         $meeting = $this->getOrCreateCabMeeting($meetingDate);
-        $this->refreshCabMeetingAgenda($meeting);
-        $meeting->refresh();
+
+        // Load the meeting's manually curated agenda items (not all pending changes)
+        $agendaChanges = $meeting->changeRequests()
+            ->with(['client', 'requester'])
+            ->get();
+
         $calendarWindowStart = Carbon::parse($meetingDate)->startOfMonth()->subMonths(3);
         $calendarWindowEnd = Carbon::parse($meetingDate)->endOfMonth()->addMonths(9);
         $calendarMeetings = $this->getCabCalendarMeetings($calendarWindowStart, $calendarWindowEnd);
@@ -358,11 +359,11 @@ class WorkflowService
             'meeting' => [
                 'id' => $meeting->id,
                 'status' => $meeting->status,
-                'agenda_items' => $meeting->changeRequests()->count(),
+                'agenda_items' => $agendaChanges->count(),
             ],
-            'pending_reviews' => $pendingChanges,
+            'pending_reviews' => $agendaChanges,
             'upcoming_changes' => $upcomingChanges,
-            'total_pending' => $pendingChanges->count(),
+            'total_pending' => $agendaChanges->count(),
             'total_upcoming' => $upcomingChanges->count(),
             'calendar_meetings' => $calendarMeetings,
         ];
@@ -493,6 +494,31 @@ class WorkflowService
             'payload' => $payload,
             'published_at' => now(),
         ]);
+    }
+
+    /**
+     * Get CAB review data for CSV export, with optional date filtering.
+     */
+    public function getCabExportData(?CarbonInterface $fromDate = null, ?CarbonInterface $toDate = null): Collection
+    {
+        return ChangeRequest::withTrashed()
+            ->with([
+                'client:id,name',
+                'requester:id,name',
+                'cabVotes.user:id,name',
+                'cabMeetings' => fn ($q) => $q->orderByDesc('meeting_date')->limit(1),
+            ])
+            ->whereHas('cabVotes', function ($q) use ($fromDate, $toDate) {
+                if ($fromDate) {
+                    $q->where('cab_votes.updated_at', '>=', $fromDate->startOfDay());
+                }
+                if ($toDate) {
+                    $q->where('cab_votes.updated_at', '<=', $toDate->endOfDay());
+                }
+            })
+            ->orderByDesc('updated_at')
+            ->limit(10000)
+            ->get();
     }
 
     /**

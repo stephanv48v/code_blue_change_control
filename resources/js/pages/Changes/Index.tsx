@@ -130,7 +130,7 @@ export default function ChangeIndex({ changes, filters, statuses, clients, reque
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Change Requests</h1>
+                        <h1 className="text-2xl font-bold">Change Requests</h1>
                         <p className="text-muted-foreground">
                             Manage and track IT infrastructure changes
                         </p>
@@ -333,7 +333,7 @@ export default function ChangeIndex({ changes, filters, statuses, clients, reque
                     ) : (
                         changeList.map((change) => (
                             <Card key={change.id} className="hover:shadow-md transition-shadow">
-                                <CardContent className="p-6">
+                                <CardContent className="px-6 py-4">
                                     <div className="flex items-start justify-between">
                                         <div className="space-y-1 flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap">

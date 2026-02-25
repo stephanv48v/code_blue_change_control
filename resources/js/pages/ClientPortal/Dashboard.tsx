@@ -62,7 +62,7 @@ export default function ClientPortalDashboard({ contact, stats, recent_changes }
             <div className="flex flex-col gap-6">
                 {/* Welcome Section */}
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">
+                    <h1 className="text-2xl font-bold">
                         Welcome, {contact.name}
                     </h1>
                     <p className="text-muted-foreground mt-1">

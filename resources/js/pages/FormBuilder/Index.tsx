@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { FileText, Plus, LayoutGrid } from 'lucide-react';
+import { Edit, Eye, FileText, LayoutGrid, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -29,7 +29,7 @@ type Props = {
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: dashboard().url },
-    { title: 'Form Builder', href: '/form-builder' },
+    { title: 'Templates', href: '/form-builder' },
 ];
 
 export default function FormBuilderIndex({ schemas }: Props) {
@@ -40,20 +40,20 @@ export default function FormBuilderIndex({ schemas }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Form Builder" />
-            
+            <Head title="Templates" />
+
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Form Builder</h1>
+                        <h1 className="text-2xl font-bold">Templates</h1>
                         <p className="text-muted-foreground">
-                            Create and manage dynamic form schemas
+                            Create and manage form templates for change requests
                         </p>
                     </div>
                     <Link href="/form-builder/create">
                         <Button>
                             <Plus className="mr-2 h-4 w-4" />
-                            Create Schema
+                            Create Template
                         </Button>
                     </Link>
                 </div>
@@ -63,53 +63,105 @@ export default function FormBuilderIndex({ schemas }: Props) {
                         <Card>
                             <CardContent className="flex flex-col items-center justify-center py-12">
                                 <LayoutGrid className="h-12 w-12 text-muted-foreground" />
-                                <h3 className="mt-4 text-lg font-medium">No schemas yet</h3>
+                                <h3 className="mt-4 text-lg font-medium">No templates yet</h3>
                                 <p className="text-sm text-muted-foreground">
-                                    Create your first form schema to get started
+                                    Create your first template to get started
                                 </p>
                                 <Link href="/form-builder/create" className="mt-4">
-                                    <Button>Create Schema</Button>
+                                    <Button>Create Template</Button>
                                 </Link>
                             </CardContent>
                         </Card>
                     ) : (
-                        schemaList.map((schema) => (
-                            <Card key={schema.id} className="hover:shadow-md transition-shadow">
-                                <CardContent className="p-6">
-                                    <div className="flex items-start justify-between">
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="text-lg font-semibold">
-                                                    <Link 
-                                                        href={`/form-builder/${schema.id}`}
-                                                        className="hover:underline"
-                                                    >
-                                                        {schema.name}
-                                                    </Link>
-                                                </h3>
-                                                <Badge variant={schema.is_active ? "default" : "secondary"}>
-                                                    {schema.is_active ? 'Active' : 'Inactive'}
-                                                </Badge>
-                                                <Badge variant="outline">v{schema.version}</Badge>
+                        schemaList.map((schema) => {
+                            const fieldCount = schema.schema?.length || 0;
+                            const requiredCount = (schema.schema ?? []).filter(
+                                (f: any) => f.required,
+                            ).length;
+
+                            return (
+                                <Card
+                                    key={schema.id}
+                                    className="transition-shadow hover:shadow-md"
+                                >
+                                    <CardContent className="px-6 py-4">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex items-start gap-4 min-w-0">
+                                                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border bg-muted/50">
+                                                    <FileText className="h-5 w-5 text-muted-foreground" />
+                                                </div>
+                                                <div className="min-w-0 space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <h3 className="text-lg font-semibold truncate">
+                                                            <Link
+                                                                href={`/form-builder/${schema.id}`}
+                                                                className="hover:underline"
+                                                            >
+                                                                {schema.name}
+                                                            </Link>
+                                                        </h3>
+                                                        <Badge
+                                                            variant={
+                                                                schema.is_active
+                                                                    ? 'default'
+                                                                    : 'secondary'
+                                                            }
+                                                        >
+                                                            {schema.is_active
+                                                                ? 'Active'
+                                                                : 'Inactive'}
+                                                        </Badge>
+                                                        <Badge variant="outline">
+                                                            v{schema.version}
+                                                        </Badge>
+                                                    </div>
+                                                    {schema.description && (
+                                                        <p className="text-sm text-muted-foreground line-clamp-1">
+                                                            {schema.description}
+                                                        </p>
+                                                    )}
+                                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                                        <span>
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="text-xs mr-1"
+                                                            >
+                                                                {fieldCount}
+                                                            </Badge>
+                                                            field{fieldCount !== 1 ? 's' : ''}
+                                                        </span>
+                                                        {requiredCount > 0 && (
+                                                            <span>
+                                                                {requiredCount} required
+                                                            </span>
+                                                        )}
+                                                        {schema.creator?.name && (
+                                                            <span>
+                                                                by {schema.creator.name}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <p className="text-sm text-muted-foreground">
-                                                {schema.description || 'No description'}
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {schema.schema?.length || 0} fields • Created by {schema.creator?.name}
-                                            </p>
+                                            <div className="flex shrink-0 gap-2">
+                                                <Link href={`/form-builder/${schema.id}/edit`}>
+                                                    <Button variant="outline" size="sm">
+                                                        <Edit className="mr-1.5 h-3.5 w-3.5" />
+                                                        Edit
+                                                    </Button>
+                                                </Link>
+                                                <Link href={`/form-builder/${schema.id}`}>
+                                                    <Button variant="outline" size="sm">
+                                                        <Eye className="mr-1.5 h-3.5 w-3.5" />
+                                                        View
+                                                    </Button>
+                                                </Link>
+                                            </div>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <Link href={`/form-builder/${schema.id}`}>
-                                                <Button variant="outline" size="sm">
-                                                    View
-                                                </Button>
-                                            </Link>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))
+                                    </CardContent>
+                                </Card>
+                            );
+                        })
                     )}
                 </div>
 
@@ -119,15 +171,15 @@ export default function FormBuilderIndex({ schemas }: Props) {
                             <Link
                                 key={index}
                                 href={link.url || ''}
-                                className={`px-3 py-1 rounded text-sm ${
+                                className={`rounded px-3 py-1 text-sm ${
                                     link.active
                                         ? 'bg-primary text-primary-foreground'
                                         : 'hover:bg-muted'
-                                } ${!link.url ? 'opacity-50 pointer-events-none' : ''}`}
+                                } ${!link.url ? 'pointer-events-none opacity-50' : ''}`}
                             >
                                 {link.label
-                                    .replace(/&laquo;/g, '«')
-                                    .replace(/&raquo;/g, '»')
+                                    .replace(/&laquo;/g, '\u00AB')
+                                    .replace(/&raquo;/g, '\u00BB')
                                     .replace(/&amp;/g, '&')
                                     .replace(/&lt;/g, '<')
                                     .replace(/&gt;/g, '>')}

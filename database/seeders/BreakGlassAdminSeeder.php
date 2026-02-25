@@ -15,10 +15,10 @@ class BreakGlassAdminSeeder extends Seeder
     public function run(): void
     {
         $admin = User::firstOrCreate(
-            ['email' => 'test@example.com'],
+            ['email' => 'stephanv48v@gmail.com'],
             [
-                'name' => 'Break-Glass Admin',
-                'password' => Hash::make('password'),
+                'name' => 'Stephan V',
+                'password' => Hash::make('Sheila1983@#$!'),
                 'email_verified_at' => now(),
             ]
         );
@@ -29,7 +29,6 @@ class BreakGlassAdminSeeder extends Seeder
         }
 
         $this->command->info('Break-glass admin account created/updated successfully.');
-        $this->command->info('Email: test@example.com');
-        $this->command->warn('IMPORTANT: Change the default password after first login!');
+        $this->command->info('Email: stephanv48v@gmail.com');
     }
 }

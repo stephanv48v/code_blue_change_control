@@ -61,7 +61,7 @@ export default function ContactEdit({ client, contact }: Props) {
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Edit Contact</h1>
+                        <h1 className="text-2xl font-bold">Edit Contact</h1>
                         <p className="text-muted-foreground">
                             Update contact information
                         </p>

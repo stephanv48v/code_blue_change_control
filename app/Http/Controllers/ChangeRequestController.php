@@ -202,6 +202,7 @@ class ChangeRequestController extends Controller
             'requester',
             'approver',
             'cabApprover',
+            'assignedEngineer:id,name',
             'formSchema',
             'externalAssets',
             'approvals.clientContact',
@@ -212,8 +213,42 @@ class ChangeRequestController extends Controller
             'workflowEvents.publisher',
         ]);
 
+        $engineers = User::role('Engineer')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $voteSummary = null;
+        $userVote = null;
+
+        if (in_array($change->status, [
+            ChangeRequest::STATUS_PENDING_APPROVAL,
+            ChangeRequest::STATUS_APPROVED,
+            ChangeRequest::STATUS_SCHEDULED,
+            ChangeRequest::STATUS_IN_PROGRESS,
+            ChangeRequest::STATUS_COMPLETED,
+        ], true)) {
+            $voteSummary = app(ApprovalService::class)->getCabVoteSummary($change);
+
+            $existingVote = $change->cabVotes
+                ->where('user_id', request()->user()?->id)
+                ->first();
+
+            if ($existingVote) {
+                $userVote = [
+                    'vote' => $existingVote->conditional_terms
+                        ? 'approve_with_conditions'
+                        : $existingVote->vote,
+                    'comments' => $existingVote->comments,
+                    'conditions' => $existingVote->conditional_terms,
+                ];
+            }
+        }
+
         return Inertia::render('Changes/Show', [
             'change' => $change,
+            'engineers' => $engineers,
+            'voteSummary' => $voteSummary,
+            'userVote' => $userVote,
         ]);
     }
 
@@ -338,6 +373,13 @@ class ChangeRequestController extends Controller
         $policyDecision = is_array($change->policy_decision) && !empty($change->policy_decision)
             ? $change->policy_decision
             : $policyEngine->evaluate($change->toArray());
+
+        // Enforce backout plan for high-risk changes (risk_score >= 60)
+        $riskScore = $policyDecision['risk_score'] ?? 0;
+        if ($riskScore >= 60 && empty($change->backout_plan)) {
+            return redirect()->route('changes.show', $change)
+                ->with('error', 'A backout plan is required for high-risk changes (risk score ≥ 60). Please add a backout plan before submitting.');
+        }
 
         $requiresCab = $policyDecision['requires_cab_approval'] ?? false;
 
@@ -467,10 +509,11 @@ class ChangeRequestController extends Controller
     public function myScheduledChanges(Request $request): Response
     {
         $user = $request->user();
+        $mineOnly = $request->boolean('mine_only');
         $windowStart = Carbon::now()->startOfMonth()->subMonths(3);
         $windowEnd = Carbon::now()->endOfMonth()->addMonths(9);
 
-        $changes = ChangeRequest::query()
+        $query = ChangeRequest::query()
             ->with([
                 'client:id,name',
                 'requester:id,name',
@@ -481,12 +524,16 @@ class ChangeRequestController extends Controller
                 ChangeRequest::STATUS_IN_PROGRESS,
             ])
             ->whereNotNull('scheduled_start_date')
-            ->whereBetween('scheduled_start_date', [$windowStart, $windowEnd])
-            ->where(function ($query) use ($user) {
-                $query
-                    ->where('requester_id', $user->id)
+            ->whereBetween('scheduled_start_date', [$windowStart, $windowEnd]);
+
+        if ($mineOnly) {
+            $query->where(function ($q) use ($user) {
+                $q->where('requester_id', $user->id)
                     ->orWhere('assigned_engineer_id', $user->id);
-            })
+            });
+        }
+
+        $changes = $query
             ->orderBy('scheduled_start_date')
             ->get([
                 'id',
@@ -535,6 +582,7 @@ class ChangeRequestController extends Controller
 
         return Inertia::render('Changes/MyScheduledChanges', [
             'changes' => $changes,
+            'mine_only' => $mineOnly,
             'range' => [
                 'from' => $windowStart->toDateString(),
                 'to' => $windowEnd->toDateString(),
@@ -838,5 +886,26 @@ class ChangeRequestController extends Controller
 
         return redirect()->route('changes.show', $change)
             ->with('message', 'Client approval bypassed. The client has been notified by email.');
+    }
+
+    public function bypassCabVoting(
+        Request $request,
+        ChangeRequest $change,
+        ApprovalService $approvalService
+    ): RedirectResponse
+    {
+        $this->authorize('approve', $change);
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'min:10'],
+        ]);
+
+        if ($change->status !== ChangeRequest::STATUS_PENDING_APPROVAL) {
+            return back()->with('error', 'This change is not pending CAB approval.');
+        }
+
+        $approvalService->bypassCabVoting($change, $request->user(), $validated['reason']);
+
+        return back()->with('message', 'CAB voting bypassed. The change has been approved.');
     }
 }

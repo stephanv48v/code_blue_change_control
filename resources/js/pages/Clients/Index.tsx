@@ -54,7 +54,7 @@ export default function ClientIndex({ clients, filters }: Props) {
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
+                        <h1 className="text-2xl font-bold">Clients</h1>
                         <p className="text-muted-foreground">
                             Manage your MSP clients and their contacts
                         </p>
@@ -105,7 +105,7 @@ export default function ClientIndex({ clients, filters }: Props) {
                     ) : (
                         clientList.map((client) => (
                             <Card key={client.id} className="hover:shadow-md transition-shadow">
-                                <CardContent className="p-6">
+                                <CardContent className="px-6 py-4">
                                     <div className="flex items-start justify-between">
                                         <div className="space-y-1">
                                             <div className="flex items-center gap-2">

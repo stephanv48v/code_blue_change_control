@@ -113,7 +113,7 @@ export default function AdminUsers({ users, roles }: Props) {
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
+                        <h1 className="text-2xl font-bold">User Management</h1>
                         <p className="text-muted-foreground">Manage staff users and assign roles</p>
                     </div>
                     <div className="flex gap-2">

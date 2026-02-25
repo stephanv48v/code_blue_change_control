@@ -45,7 +45,7 @@ export default function ClientShow({ client }: Props) {
                         </Link>
                         <div>
                             <div className="flex items-center gap-3">
-                                <h1 className="text-3xl font-bold tracking-tight">{client.name}</h1>
+                                <h1 className="text-2xl font-bold">{client.name}</h1>
                                 <Badge variant={client.is_active ? "default" : "secondary"}>
                                     {client.is_active ? 'Active' : 'Inactive'}
                                 </Badge>

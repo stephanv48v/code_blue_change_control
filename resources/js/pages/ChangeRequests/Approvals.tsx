@@ -54,10 +54,10 @@ export default function Approvals({ changeRequest, cabSummary }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Approvals - ${changeRequest.change_id}`} />
 
-            <div className="space-y-6 p-6">
+            <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 <div>
-                    <h1 className="text-2xl font-semibold">{changeRequest.title}</h1>
-                    <p className="text-sm text-muted-foreground">{changeRequest.change_id}</p>
+                    <h1 className="text-2xl font-bold">{changeRequest.title}</h1>
+                    <p className="text-muted-foreground">{changeRequest.change_id}</p>
                 </div>
 
                 <Card>

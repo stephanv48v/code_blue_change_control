@@ -56,7 +56,7 @@ export default function ContactShow({ client, contact }: Props) {
                             </Avatar>
                             <div>
                                 <div className="flex items-center gap-2">
-                                    <h1 className="text-3xl font-bold tracking-tight">
+                                    <h1 className="text-2xl font-bold">
                                         {contact.first_name} {contact.last_name}
                                     </h1>
                                     {contact.is_primary_contact && (

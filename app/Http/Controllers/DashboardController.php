@@ -21,7 +21,7 @@ class DashboardController extends Controller
         // Authorization is handled by middleware
         $kpis = $this->dashboardService->getKPIs();
         
-        return Inertia::render('dashboard', [
+        return Inertia::render('Dashboard', [
             'user' => [
                 'name' => $request->user()->name,
                 'email' => $request->user()->email,
