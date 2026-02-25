@@ -71,10 +71,9 @@ class IntegrationWebhookController extends Controller
 
     private function resolveIncomingToken(Request $request): ?string
     {
+        // Only accept tokens from headers to avoid secret exposure in server logs/URLs
         $token = $request->header('X-Webhook-Token')
-            ?? $request->header('X-Integration-Token')
-            ?? $request->query('token')
-            ?? $request->input('token');
+            ?? $request->header('X-Integration-Token');
 
         if (!is_string($token) || $token === '') {
             return null;

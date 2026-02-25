@@ -13,6 +13,14 @@ use Inertia\Response;
 class ClientContactController extends Controller
 {
     /**
+     * Ensure the contact belongs to the given client.
+     */
+    private function ensureContactBelongsToClient(Client $client, ClientContact $contact): void
+    {
+        abort_unless($contact->client_id === $client->id, 404);
+    }
+
+    /**
      * Display a listing of contacts for a client.
      */
     public function index(Client $client): Response
@@ -77,6 +85,7 @@ class ClientContactController extends Controller
      */
     public function show(Client $client, ClientContact $contact): Response
     {
+        $this->ensureContactBelongsToClient($client, $contact);
         $contact->load('client');
 
         return Inertia::render('Clients/Contacts/Show', [
@@ -90,6 +99,7 @@ class ClientContactController extends Controller
      */
     public function edit(Client $client, ClientContact $contact): Response
     {
+        $this->ensureContactBelongsToClient($client, $contact);
         return Inertia::render('Clients/Contacts/Edit', [
             'client' => $client->only('id', 'name', 'code'),
             'contact' => $contact,
@@ -101,6 +111,7 @@ class ClientContactController extends Controller
      */
     public function update(Request $request, Client $client, ClientContact $contact)
     {
+        $this->ensureContactBelongsToClient($client, $contact);
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
@@ -134,6 +145,7 @@ class ClientContactController extends Controller
      */
     public function destroy(Client $client, ClientContact $contact)
     {
+        $this->ensureContactBelongsToClient($client, $contact);
         $contact->delete();
 
         return redirect()->route('clients.show', $client)
@@ -145,6 +157,7 @@ class ClientContactController extends Controller
      */
     public function invite(Client $client, ClientContact $contact): Response
     {
+        $this->ensureContactBelongsToClient($client, $contact);
         return Inertia::render('Clients/Contacts/Invite', [
             'client' => $client->only('id', 'name', 'code'),
             'contact' => $contact,

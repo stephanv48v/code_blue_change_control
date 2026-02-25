@@ -18,7 +18,6 @@ class ChangeRequest extends Model
 
     public const STATUS_DRAFT = 'draft';
     public const STATUS_SUBMITTED = 'submitted';
-    public const STATUS_UNDER_REVIEW = 'under_review';
     public const STATUS_PENDING_APPROVAL = 'pending_approval';
     public const STATUS_APPROVED = 'approved';
     public const STATUS_REJECTED = 'rejected';
@@ -211,7 +210,6 @@ class ChangeRequest extends Model
     {
         return $query->whereIn('status', [
             self::STATUS_SUBMITTED,
-            self::STATUS_UNDER_REVIEW,
             self::STATUS_PENDING_APPROVAL,
         ]);
     }
@@ -237,7 +235,6 @@ class ChangeRequest extends Model
     {
         return in_array($this->status, [
             self::STATUS_SUBMITTED,
-            self::STATUS_UNDER_REVIEW,
             self::STATUS_PENDING_APPROVAL,
         ], true);
     }
@@ -277,7 +274,7 @@ class ChangeRequest extends Model
             'auditable_type' => self::class,
             'auditable_id' => $this->id,
             'event' => $event,
-            'user_id' => $userId ?? auth()->id(),
+            'user_id' => $userId ?? auth()->id() ?? null,
             'old_values' => $oldValues,
             'new_values' => $newValues,
             'ip_address' => request()?->ip(),

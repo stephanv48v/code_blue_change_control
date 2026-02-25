@@ -3,6 +3,7 @@ import {
     ArrowLeft,
     CheckCircle2,
     Clock3,
+    Download,
     FileText,
     History,
     ShieldAlert,
@@ -63,10 +64,11 @@ const statusColors: Record<string, string> = {
     submitted: 'bg-blue-100 text-blue-800',
     pending_approval: 'bg-yellow-100 text-yellow-800',
     approved: 'bg-green-100 text-green-800',
+    rejected: 'bg-red-100 text-red-800',
     scheduled: 'bg-purple-100 text-purple-800',
     in_progress: 'bg-orange-100 text-orange-800',
     completed: 'bg-emerald-100 text-emerald-800',
-    cancelled: 'bg-red-100 text-red-800',
+    cancelled: 'bg-slate-200 text-slate-600',
 };
 
 const decisionColors: Record<HistoryItem['decision'], string> = {
@@ -100,7 +102,7 @@ export default function CabHistory({ history, summary }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="CAB Review History" />
 
-            <div className="space-y-6">
+            <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 <div className="flex items-center justify-between gap-3">
                     <div>
                         <h1 className="text-2xl font-bold">CAB Review History</h1>
@@ -108,12 +110,20 @@ export default function CabHistory({ history, summary }: Props) {
                             Historical record of CAB votes and outcomes.
                         </p>
                     </div>
-                    <Link href="/cab-agenda">
-                        <Button variant="outline">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Agenda
-                        </Button>
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        <a href="/export/cab-history">
+                            <Button variant="outline">
+                                <Download className="mr-2 h-4 w-4" />
+                                Export CSV
+                            </Button>
+                        </a>
+                        <Link href="/cab-agenda">
+                            <Button variant="outline">
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back to Agenda
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -177,7 +187,7 @@ export default function CabHistory({ history, summary }: Props) {
                                                         statusColors[item.status] || 'bg-slate-100'
                                                     }
                                                 >
-                                                    {item.status.replace('_', ' ')}
+                                                    {item.status.replaceAll('_', ' ')}
                                                 </Badge>
                                                 {item.archived_at && (
                                                     <Badge variant="outline">Archived</Badge>

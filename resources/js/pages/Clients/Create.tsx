@@ -66,7 +66,7 @@ export default function ClientCreate({ accountManagers }: Props) {
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Add Client</h1>
+                        <h1 className="text-2xl font-bold">Add Client</h1>
                         <p className="text-muted-foreground">
                             Create a new client organization
                         </p>

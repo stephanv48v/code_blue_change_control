@@ -63,7 +63,7 @@ export default function CabVote({ changeRequest, voteSummary, userVote }: Props)
         { title: 'Dashboard', href: dashboard().url },
         { title: 'CAB Agenda', href: '/cab-agenda' },
         { title: changeRequest.change_id, href: `/changes/${changeRequest.id}` },
-        { title: 'CAB Vote', href: `/cab-agenda/changes/${changeRequest.id}/vote` },
+        { title: 'CAB Vote', href: `/cab-agenda/vote/${changeRequest.id}` },
     ];
 
     const { data, setData, post, processing, errors } = useForm({
@@ -81,17 +81,17 @@ export default function CabVote({ changeRequest, voteSummary, userVote }: Props)
             return;
         }
 
-        post(`/cab-agenda/changes/${changeRequest.id}/vote`);
+        post(`/cab-agenda/vote/${changeRequest.id}`);
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`CAB Vote - ${changeRequest.change_id}`} />
 
-            <div className="space-y-6 p-6">
+            <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 <div>
-                    <h1 className="text-2xl font-semibold">{changeRequest.title}</h1>
-                    <p className="text-sm text-muted-foreground">{changeRequest.change_id}</p>
+                    <h1 className="text-2xl font-bold">{changeRequest.title}</h1>
+                    <p className="text-muted-foreground">{changeRequest.change_id}</p>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-4">

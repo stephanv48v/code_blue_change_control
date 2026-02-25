@@ -169,7 +169,7 @@ export default function ChangeCreate({ clients, formSchemas, assets, clientAppro
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Create Change Request</h1>
+                        <h1 className="text-2xl font-bold">Create Change Request</h1>
                         <p className="text-muted-foreground">
                             Submit a new IT infrastructure change with policy and asset context.
                         </p>

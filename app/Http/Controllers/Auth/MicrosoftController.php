@@ -127,24 +127,33 @@ class MicrosoftController extends Controller
             return true;
         }
 
-        // Fetch user's transitive group memberships from Microsoft Graph
-        $response = Http::withToken($accessToken)
-            ->get('https://graph.microsoft.com/v1.0/me/memberOf', [
-                '$select' => 'id,displayName',
-                '$top'    => 200,
-            ]);
+        // Fetch user's transitive group memberships from Microsoft Graph (paginated)
+        $userGroupIds = [];
+        $url = 'https://graph.microsoft.com/v1.0/me/memberOf?' . http_build_query([
+            '$select' => 'id,displayName',
+            '$top'    => 200,
+        ]);
 
-        if (! $response->successful()) {
-            Log::warning('Failed to fetch Entra group memberships — skipping role sync', [
-                'user'   => $user->email,
-                'status' => $response->status(),
-                'body'   => $response->body(),
-            ]);
+        while ($url) {
+            $response = Http::withToken($accessToken)->get($url);
 
-            return false;
+            if (! $response->successful()) {
+                Log::warning('Failed to fetch Entra group memberships — skipping role sync', [
+                    'user'   => $user->email,
+                    'status' => $response->status(),
+                    'body'   => $response->body(),
+                ]);
+
+                return false;
+            }
+
+            $userGroupIds = array_merge(
+                $userGroupIds,
+                collect($response->json('value', []))->pluck('id')->toArray()
+            );
+
+            $url = $response->json('@odata.nextLink');
         }
-
-        $userGroupIds = collect($response->json('value', []))->pluck('id')->toArray();
 
         // Determine which roles are managed via group mappings
         $managedRoles = $mappings->pluck('role_name')->unique();

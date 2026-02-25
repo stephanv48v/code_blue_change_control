@@ -37,11 +37,11 @@ export default function ChangeConflicts({ change, conflicts }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Conflicts - ${change.change_id}`} />
 
-            <div className="space-y-6 p-6">
+            <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 <div className="flex items-start justify-between">
                     <div>
-                        <h1 className="text-2xl font-semibold">Scheduling Conflicts</h1>
-                        <p className="text-sm text-muted-foreground">{change.title}</p>
+                        <h1 className="text-2xl font-bold">Scheduling Conflicts</h1>
+                        <p className="text-muted-foreground">{change.title}</p>
                     </div>
                     <Link href={`/changes/${change.id}`}>
                         <Button variant="outline">Back to Change</Button>

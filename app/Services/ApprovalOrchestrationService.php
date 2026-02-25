@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Jobs\EscalateApprovalJob;
 use App\Models\Approval;
+use App\Notifications\ApprovalEscalatedNotification;
 use App\Notifications\ApprovalReminderNotification;
 
 class ApprovalOrchestrationService
@@ -94,5 +95,12 @@ class ApprovalOrchestrationService
             'approval_escalated',
             "Approval #{$approval->id} escalated at level {$approval->escalation_level}."
         );
+
+        // Notify the change requester about the escalation
+        $requester = $approval->changeRequest?->requester;
+        if ($requester) {
+            $approval->loadMissing('changeRequest');
+            $requester->notify(new ApprovalEscalatedNotification($approval));
+        }
     }
 }

@@ -1,5 +1,5 @@
-import { Head, Link } from '@inertiajs/react';
-import { CalendarClock, Clock, FileText } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { CalendarClock, Clock, FileText, Users, User } from 'lucide-react';
 import { EventCalendar, type CalendarEvent } from '@/components/changes/event-calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ type ScheduledChange = {
 
 type Props = {
     changes: ScheduledChange[];
+    mine_only: boolean;
     range: {
         from: string;
         to: string;
@@ -36,7 +37,7 @@ const statusTone: Record<string, CalendarEvent['tone']> = {
     cancelled: 'danger',
 };
 
-export default function MyScheduledChanges({ changes, range }: Props) {
+export default function MyScheduledChanges({ changes, mine_only, range }: Props) {
     const events: CalendarEvent[] = changes
         .filter((change) => change.scheduled_start_date)
         .map((change) => {
@@ -51,35 +52,66 @@ export default function MyScheduledChanges({ changes, range }: Props) {
                 date: startDate,
                 title: `${change.change_id} - ${change.title}`,
                 description: `${change.client?.name ?? 'Unknown Client'} • ${change.participant_role || 'Participant'} • ${scheduleLabel}`,
-                badge: change.status.replace('_', ' '),
+                badge: change.status.replaceAll('_', ' '),
                 tone: statusTone[change.status] ?? 'default',
                 href: `/changes/${change.id}`,
             };
         });
 
+    const toggleFilter = () => {
+        router.get(
+            '/changes/my-scheduled',
+            mine_only ? {} : { mine_only: '1' },
+            { preserveState: true, replace: true },
+        );
+    };
+
+    const pageTitle = mine_only ? 'My Scheduled Changes' : 'Scheduled Changes';
+
     return (
         <AppLayout
             breadcrumbs={[
                 { title: 'Dashboard', href: dashboard().url },
-                { title: 'My Scheduled Changes', href: '/changes/my-scheduled' },
+                { title: pageTitle, href: '/changes/my-scheduled' },
             ]}
         >
-            <Head title="My Scheduled Changes" />
+            <Head title={pageTitle} />
 
-            <div className="space-y-6 p-6">
+            <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-semibold">My Scheduled Changes</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Calendar of changes where you are the requester or assigned engineer.
+                        <h1 className="text-2xl font-bold">{pageTitle}</h1>
+                        <p className="text-muted-foreground">
+                            {mine_only
+                                ? 'Changes where you are the requester or assigned engineer.'
+                                : 'All scheduled and in-progress changes across the organisation.'}
                         </p>
                         <p className="text-xs text-muted-foreground">
                             Window: {new Date(range.from).toLocaleDateString()} - {new Date(range.to).toLocaleDateString()}
                         </p>
                     </div>
-                    <Link href="/changes">
-                        <Button variant="outline">Back to Change Requests</Button>
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant={mine_only ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={toggleFilter}
+                        >
+                            {mine_only ? (
+                                <>
+                                    <User className="mr-1 h-4 w-4" />
+                                    My Changes
+                                </>
+                            ) : (
+                                <>
+                                    <Users className="mr-1 h-4 w-4" />
+                                    All Changes
+                                </>
+                            )}
+                        </Button>
+                        <Link href="/changes">
+                            <Button variant="outline" size="sm">Back to Change Requests</Button>
+                        </Link>
+                    </div>
                 </div>
 
                 <Card>
@@ -89,7 +121,7 @@ export default function MyScheduledChanges({ changes, range }: Props) {
                             Schedule Calendar
                         </CardTitle>
                         <CardDescription>
-                            Select a date to see your scheduled implementation windows.
+                            Select a date to see scheduled implementation windows.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -103,15 +135,19 @@ export default function MyScheduledChanges({ changes, range }: Props) {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Upcoming Assigned Changes</CardTitle>
+                        <CardTitle>{mine_only ? 'My Upcoming Changes' : 'All Upcoming Changes'}</CardTitle>
                         <CardDescription>
-                            Detailed list of your scheduled and in-progress work.
+                            {mine_only
+                                ? 'Detailed list of your scheduled and in-progress work.'
+                                : 'All scheduled and in-progress changes.'}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         {changes.length === 0 && (
                             <p className="text-sm text-muted-foreground">
-                                No scheduled changes found for your account.
+                                {mine_only
+                                    ? 'No scheduled changes found for your account.'
+                                    : 'No scheduled changes found.'}
                             </p>
                         )}
 
@@ -141,7 +177,7 @@ export default function MyScheduledChanges({ changes, range }: Props) {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Badge variant="outline" className="capitalize">
-                                            {change.status.replace('_', ' ')}
+                                            {change.status.replaceAll('_', ' ')}
                                         </Badge>
                                         <Badge variant="secondary" className="capitalize">
                                             {change.priority}

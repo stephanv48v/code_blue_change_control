@@ -113,7 +113,7 @@ export default function ChangeEdit({ change, clients, formSchemas, assets, clien
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Edit Change Request</h1>
+                        <h1 className="text-2xl font-bold">Edit Change Request</h1>
                         <p className="text-muted-foreground">{change.change_id}</p>
                     </div>
                 </div>

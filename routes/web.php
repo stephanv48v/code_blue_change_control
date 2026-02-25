@@ -66,7 +66,7 @@ Route::get('/login/local', [LocalAuthController::class, 'showLogin'])
 
 Route::post('/login/local', [LocalAuthController::class, 'login'])
     ->name('login.local.post')
-    ->middleware('guest');
+    ->middleware(['guest', 'throttle:5,1']);
 
 // Logout
 Route::post('/logout', [LocalAuthController::class, 'logout'])
@@ -151,6 +151,7 @@ Route::middleware(['auth:web'])->group(function () {
         // Role Management
         Route::get('/roles', [AdminController::class, 'roles'])->name('admin.roles');
         Route::post('/roles', [AdminController::class, 'storeRole'])->name('admin.roles.store');
+        Route::put('/roles/{role}', [AdminController::class, 'updateRole'])->name('admin.roles.update');
         Route::delete('/roles/{role}', [AdminController::class, 'destroyRole'])->name('admin.roles.destroy');
     });
 
@@ -284,6 +285,11 @@ Route::middleware(['auth:web'])->group(function () {
             ->name('changes.bypass-client-approval')
             ->middleware('can:changes.approve');
 
+        // Bypass CAB voting (manager override)
+        Route::post('/changes/{change}/bypass-cab-voting', [ChangeRequestController::class, 'bypassCabVoting'])
+            ->name('changes.bypass-cab-voting')
+            ->middleware('can:changes.approve');
+
         // Workflow routes
         Route::post('/changes/{change}/transition', [WorkflowController::class, 'transition'])
             ->name('changes.transition');
@@ -301,6 +307,10 @@ Route::middleware(['auth:web'])->group(function () {
             ->name('cab.meetings.generate');
         Route::put('/cab-agenda/meetings/{meeting}', [WorkflowController::class, 'updateCabMeeting'])
             ->name('cab.meetings.update');
+        Route::post('/cab-agenda/meetings/{meeting}/items', [WorkflowController::class, 'addAgendaItem'])
+            ->name('cab.meetings.items.add');
+        Route::delete('/cab-agenda/meetings/{meeting}/items/{change}', [WorkflowController::class, 'removeAgendaItem'])
+            ->name('cab.meetings.items.remove');
         Route::get('/cab-agenda/history', [WorkflowController::class, 'cabHistory'])
             ->name('cab.history');
 
@@ -317,6 +327,8 @@ Route::middleware(['auth:web'])->group(function () {
         // Export routes
         Route::get('/export/changes', [ExportController::class, 'changes'])
             ->name('export.changes');
+        Route::get('/export/cab-history', [ExportController::class, 'cabHistory'])
+            ->name('export.cab-history');
         Route::get('/changes/{change}/print', [ExportController::class, 'printChange'])
             ->name('changes.print');
     });

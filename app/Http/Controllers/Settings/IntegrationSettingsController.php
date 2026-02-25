@@ -76,16 +76,18 @@ class IntegrationSettingsController extends Controller
             'mappings.*.role_name'  => ['required', 'string', 'exists:roles,name'],
         ]);
 
-        // Replace all mappings atomically
-        EntraGroupRoleMapping::truncate();
+        // Replace all mappings atomically within a transaction
+        \Illuminate\Support\Facades\DB::transaction(function () use ($validated) {
+            EntraGroupRoleMapping::query()->delete();
 
-        foreach ($validated['mappings'] as $mapping) {
-            EntraGroupRoleMapping::create([
-                'group_id'   => trim($mapping['group_id']),
-                'group_name' => isset($mapping['group_name']) ? trim($mapping['group_name']) : null,
-                'role_name'  => $mapping['role_name'],
-            ]);
-        }
+            foreach ($validated['mappings'] as $mapping) {
+                EntraGroupRoleMapping::create([
+                    'group_id'   => trim($mapping['group_id']),
+                    'group_name' => isset($mapping['group_name']) ? trim($mapping['group_name']) : null,
+                    'role_name'  => $mapping['role_name'],
+                ]);
+            }
+        });
 
         return back()->with('message', 'Group role mappings saved successfully.');
     }

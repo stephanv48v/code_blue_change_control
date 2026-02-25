@@ -91,8 +91,8 @@ export default function FormBuilderCreate({ templates = [] }: Props) {
                             </Button>
                         </Link>
                         <div>
-                            <h1 className="text-2xl font-semibold tracking-tight">Create Form Schema</h1>
-                            <p className="text-sm text-muted-foreground">
+                            <h1 className="text-2xl font-bold">Create Form Schema</h1>
+                            <p className="text-muted-foreground">
                                 Build from scratch or start from a template below.
                             </p>
                         </div>

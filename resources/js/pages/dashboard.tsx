@@ -84,7 +84,7 @@ export default function Dashboard({ user, kpis }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
 
-            <div className="space-y-6">
+            <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 {/* Welcome Header */}
                 <div className="flex items-center justify-between">
                     <div>

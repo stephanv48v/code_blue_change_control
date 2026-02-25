@@ -1,11 +1,16 @@
-import type { SVGAttributes } from 'react';
+import { cn } from '@/lib/utils';
 
-export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
+type AppLogoIconProps = {
+    className?: string;
+};
+
+export default function AppLogoIcon({ className }: AppLogoIconProps) {
     return (
-        <svg {...props} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* Power button symbol matching the logo */}
-            <circle cx="12" cy="12" r="8" fill="none" stroke="#5eb3e6" strokeWidth="3"/>
-            <line x1="12" y1="2" x2="12" y2="8" stroke="#5eb3e6" strokeWidth="3" strokeLinecap="round"/>
-        </svg>
+        <div className={cn('flex items-center justify-center rounded-lg bg-gradient-to-br from-sky-400 to-blue-600 shadow-sm', className)}>
+            <svg viewBox="0 0 24 24" fill="none" className="size-5">
+                <circle cx="12" cy="13" r="7" stroke="white" strokeWidth="2.5" fill="none" />
+                <line x1="12" y1="4" x2="12" y2="10" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+        </div>
     );
 }

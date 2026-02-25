@@ -39,7 +39,7 @@ export default function ContactInvite({ client, contact }: Props) {
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Send Portal Invite</h1>
+                        <h1 className="text-2xl font-bold">Send Portal Invite</h1>
                         <p className="text-muted-foreground">
                             Send magic link login to {contact.first_name} {contact.last_name}
                         </p>

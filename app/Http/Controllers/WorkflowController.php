@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CabMeeting;
 use App\Models\ChangeRequest;
 use App\Models\User;
+use App\Services\ApprovalService;
 use App\Services\WorkflowService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -103,6 +104,8 @@ class WorkflowController extends Controller
      */
     public function conflicts(Request $request, ChangeRequest $change): Response
     {
+        $this->authorize('view', $change);
+
         $validated = $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date',
@@ -122,14 +125,65 @@ class WorkflowController extends Controller
     }
 
     /**
-     * Show CAB agenda
+     * Show CAB agenda — unified hub with meetings, voting, and history.
      */
-    public function cabAgenda(): Response
+    public function cabAgenda(Request $request): Response
     {
-        $agenda = $this->workflowService->generateCabAgenda(now());
+        $meetingDate = $request->has('date')
+            ? Carbon::parse($request->query('date'))
+            : now();
+
+        $agenda = $this->workflowService->generateCabAgenda($meetingDate);
+
+        // Meetings data (for Calendar & Meetings tab)
+        $meetings = $this->workflowService->getCabMeetings();
+
+        // History data (for Review History tab)
+        $history = $this->workflowService->getCabReviewHistory();
+
+        // Per-agenda-item vote summaries for inline voting
+        $approvalService = app(ApprovalService::class);
+        $currentUser = request()->user();
+
+        $agendaVoteSummaries = [];
+        $agendaUserVotes = [];
+
+        // Build vote data for all pending review items
+        foreach ($agenda['pending_reviews'] as $change) {
+            $change->load('cabVotes.user');
+            $agendaVoteSummaries[$change->id] = $approvalService->getCabVoteSummary($change);
+
+            $existingVote = $change->cabVotes->where('user_id', $currentUser?->id)->first();
+            $agendaUserVotes[$change->id] = $existingVote ? [
+                'vote' => $existingVote->conditional_terms ? 'approve_with_conditions' : $existingVote->vote,
+                'comments' => $existingVote->comments,
+                'conditions' => $existingVote->conditional_terms,
+            ] : null;
+        }
+
+        // Available changes not yet on today's meeting agenda
+        $agendaPendingIds = collect($agenda['pending_reviews'])->pluck('id')->all();
+        $allPending = $this->workflowService->getPendingCabReview();
+        $availableChanges = $allPending->filter(
+            fn (ChangeRequest $cr) => !in_array($cr->id, $agendaPendingIds, true)
+        )->values();
 
         return Inertia::render('Changes/CabAgenda', [
             'agenda' => $agenda,
+            'meetings' => $meetings,
+            'history' => $history,
+            'historySummary' => [
+                'total_reviewed' => $history->count(),
+                'approved' => $history->where('decision', 'approved')->count(),
+                'rejected' => $history->where('decision', 'rejected')->count(),
+                'pending' => $history->where('decision', 'pending')->count(),
+                'with_conditions' => $history->filter(
+                    fn (array $item) => ($item['conditional_votes'] ?? 0) > 0
+                )->count(),
+            ],
+            'agendaVoteSummaries' => (object) $agendaVoteSummaries,
+            'agendaUserVotes' => (object) $agendaUserVotes,
+            'availableChanges' => $availableChanges,
         ]);
     }
 
@@ -167,7 +221,11 @@ class WorkflowController extends Controller
     }
 
     /**
-     * Generate or refresh a CAB meeting agenda.
+     * Create a CAB meeting or refresh an existing one's agenda.
+     *
+     * When auto_populate is false (default for "Create Agenda"), an empty meeting
+     * is created so the user can manually curate the agenda.
+     * When auto_populate is true ("Refresh Agenda"), all pending changes are synced.
      */
     public function generateCabMeeting(Request $request): RedirectResponse
     {
@@ -177,6 +235,7 @@ class WorkflowController extends Controller
 
         $validated = $request->validate([
             'meeting_date' => 'nullable|date',
+            'auto_populate' => 'nullable|boolean',
         ]);
 
         try {
@@ -184,19 +243,30 @@ class WorkflowController extends Controller
                 ? Carbon::parse($validated['meeting_date'])
                 : now();
 
+            $autoPopulate = (bool) ($validated['auto_populate'] ?? false);
+
             $meeting = $this->workflowService->getOrCreateCabMeeting($meetingDate, $request->user());
-            $result = $this->workflowService->refreshCabMeetingAgenda($meeting);
 
-            $message = $result['updated']
-                ? "Agenda refreshed for {$meeting->meeting_date->toDateString()}: {$result['total']} item(s), {$result['added']} added, {$result['removed']} removed."
-                : "Meeting exists but is not in planned state. Agenda refresh skipped.";
+            if ($autoPopulate) {
+                $result = $this->workflowService->refreshCabMeetingAgenda($meeting);
 
-            if ($result['updated'] && $result['pending_available'] === 0) {
-                $message .= ' No pending CAB reviews found.';
+                $message = $result['updated']
+                    ? "Agenda refreshed: {$result['total']} item(s), {$result['added']} added, {$result['removed']} removed."
+                    : "Meeting is not in planned state. Agenda refresh skipped.";
+
+                if ($result['updated'] && $result['pending_available'] === 0) {
+                    $message .= ' No pending CAB reviews found.';
+                }
+            } else {
+                $itemCount = $meeting->changeRequests()->count();
+                $message = "Meeting agenda created for {$meeting->meeting_date->toDateString()}. Select changes to add to the agenda.";
+                if ($itemCount > 0) {
+                    $message = "Meeting for {$meeting->meeting_date->toDateString()} already exists with {$itemCount} item(s). You can add or remove changes below.";
+                }
             }
 
             return redirect()
-                ->route('cab.meetings')
+                ->route('cab.agenda', ['date' => $meetingDate->toDateString(), 'tab' => 'today'])
                 ->with('message', $message);
         } catch (\Throwable $exception) {
             report($exception);
@@ -223,5 +293,52 @@ class WorkflowController extends Controller
         $this->workflowService->updateCabMeeting($meeting, $validated, $request->user());
 
         return back()->with('message', 'CAB meeting updated.');
+    }
+
+    /**
+     * Add one or more change requests to a CAB meeting agenda.
+     */
+    public function addAgendaItem(Request $request, CabMeeting $meeting): RedirectResponse
+    {
+        if (!$request->user()?->canAny(['changes.edit', 'changes.approve'])) {
+            return back()->with('error', 'You do not have permission to manage CAB meeting agendas.');
+        }
+
+        if ($meeting->status !== CabMeeting::STATUS_PLANNED) {
+            return back()->with('error', 'Cannot modify the agenda of a meeting that is not in planned status.');
+        }
+
+        $validated = $request->validate([
+            'change_request_ids' => 'required|array|min:1',
+            'change_request_ids.*' => 'exists:change_requests,id',
+        ]);
+
+        $syncData = collect($validated['change_request_ids'])
+            ->mapWithKeys(fn ($id) => [(int) $id => ['decision' => 'pending']])
+            ->all();
+
+        $meeting->changeRequests()->syncWithoutDetaching($syncData);
+
+        $count = count($validated['change_request_ids']);
+
+        return back()->with('message', "Added {$count} change" . ($count !== 1 ? 's' : '') . " to the meeting agenda.");
+    }
+
+    /**
+     * Remove a change request from a CAB meeting agenda.
+     */
+    public function removeAgendaItem(Request $request, CabMeeting $meeting, ChangeRequest $change): RedirectResponse
+    {
+        if (!$request->user()?->canAny(['changes.edit', 'changes.approve'])) {
+            return back()->with('error', 'You do not have permission to manage CAB meeting agendas.');
+        }
+
+        if ($meeting->status !== CabMeeting::STATUS_PLANNED) {
+            return back()->with('error', 'Cannot modify the agenda of a meeting that is not in planned status.');
+        }
+
+        $meeting->changeRequests()->detach($change->id);
+
+        return back()->with('message', "Removed {$change->change_id} from the meeting agenda.");
     }
 }

@@ -74,7 +74,7 @@ export default function ClientEdit({ client, accountManagers }: Props) {
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Edit Client</h1>
+                        <h1 className="text-2xl font-bold">Edit Client</h1>
                         <p className="text-muted-foreground">
                             Update client information
                         </p>

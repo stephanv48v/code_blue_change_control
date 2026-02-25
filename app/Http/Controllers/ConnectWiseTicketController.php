@@ -23,7 +23,12 @@ class ConnectWiseTicketController extends Controller
             $provider = new ConnectWiseProvider();
             $ticket = $provider->fetchTicket($connection, $ticketNumber);
         } catch (\Throwable $e) {
-            return response()->json(['error' => 'Ticket not found or ConnectWise error: '.$e->getMessage()], 404);
+            \Illuminate\Support\Facades\Log::warning('ConnectWise ticket lookup failed', [
+                'ticket' => $ticketNumber,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json(['error' => 'Ticket not found or ConnectWise is unreachable.'], 404);
         }
 
         if (empty($ticket) || ! isset($ticket['id'])) {

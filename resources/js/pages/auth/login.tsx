@@ -110,7 +110,7 @@ export default function Login({ enableLocalLogin }: Props) {
 
                         {/* Footer */}
                         <p className="text-center text-xs text-muted-foreground">
-                            Staff access only. Contact IT for assistance.
+                            Codeblue Staff and Client Access Portal. Contact Servicedesk for assistance.
                         </p>
                     </div>
                 </div>
