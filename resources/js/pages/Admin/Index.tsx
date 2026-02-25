@@ -17,7 +17,7 @@ export default function AdminIndex() {
             
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Admin Panel</h1>
+                    <h1 className="text-2xl font-bold">Admin Panel</h1>
                     <p className="text-muted-foreground">
                         User management, roles, and system settings
                     </p>

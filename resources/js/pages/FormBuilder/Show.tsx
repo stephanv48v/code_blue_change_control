@@ -1,9 +1,31 @@
+import { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Edit, Trash2, Copy, Eye } from 'lucide-react';
+import {
+    AlignLeft,
+    ArrowLeft,
+    Building2,
+    Calendar,
+    CheckSquare,
+    ChevronDown,
+    ChevronRight,
+    CircleDot,
+    Clock3,
+    Edit,
+    Eye,
+    Hash,
+    List,
+    ListChecks,
+    Mail,
+    Phone,
+    Trash2,
+    Type,
+    User,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import DynamicForm from '@/components/FormBuilder/DynamicForm';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem, FormSchema } from '@/types';
@@ -14,27 +36,60 @@ type Props = {
     };
 };
 
+/** Map field type string → lucide icon component */
+const FIELD_TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+    text: Type,
+    textarea: AlignLeft,
+    number: Hash,
+    email: Mail,
+    phone: Phone,
+    date: Calendar,
+    datetime: Clock3,
+    client_select: Building2,
+    select: List,
+    checkbox: CheckSquare,
+    radio: CircleDot,
+};
+
+/** Friendly display labels for field types */
+const FIELD_TYPE_LABELS: Record<string, string> = {
+    text: 'Text',
+    textarea: 'Text Area',
+    number: 'Number',
+    email: 'Email',
+    phone: 'Phone',
+    date: 'Date',
+    datetime: 'Date & Time',
+    client_select: 'Client Selector',
+    select: 'Dropdown',
+    checkbox: 'Checkbox',
+    radio: 'Radio Group',
+};
+
 export default function FormBuilderShow({ schema }: Props) {
     const { delete: destroy, processing } = useForm();
+    const [previewValues, setPreviewValues] = useState<Record<string, any>>({});
 
     const handleDelete = () => {
-        if (confirm('Are you sure you want to delete this form schema?')) {
+        if (confirm('Are you sure you want to delete this template?')) {
             destroy(`/form-builder/${schema.id}`);
         }
     };
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: dashboard().url },
-        { title: 'Form Builder', href: '/form-builder' },
+        { title: 'Templates', href: '/form-builder' },
         { title: schema.name, href: `/form-builder/${schema.id}` },
     ];
 
-    const fieldCount = Array.isArray(schema.schema) ? schema.schema.length : 0;
+    const fields = Array.isArray(schema.schema) ? schema.schema : [];
+    const fieldCount = fields.length;
+    const requiredCount = fields.filter((f: any) => f.required).length;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={schema.name} />
-            
+
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 {/* Header */}
                 <div className="flex items-start justify-between">
@@ -46,14 +101,20 @@ export default function FormBuilderShow({ schema }: Props) {
                         </Link>
                         <div>
                             <div className="flex items-center gap-3">
-                                <h1 className="text-3xl font-bold tracking-tight">{schema.name}</h1>
-                                <Badge variant={schema.is_active ? "default" : "secondary"}>
+                                <h1 className="text-2xl font-bold">{schema.name}</h1>
+                                <Badge variant={schema.is_active ? 'default' : 'secondary'}>
                                     {schema.is_active ? 'Active' : 'Inactive'}
                                 </Badge>
                                 <Badge variant="outline">v{schema.version}</Badge>
                             </div>
                             <p className="text-muted-foreground mt-1">
-                                {fieldCount} fields{schema.creator ? ` • Created by ${schema.creator.name}` : ''}
+                                {fieldCount} field{fieldCount !== 1 ? 's' : ''}
+                                {requiredCount > 0 && (
+                                    <> &middot; {requiredCount} required</>
+                                )}
+                                {schema.creator && (
+                                    <> &middot; Created by {schema.creator.name}</>
+                                )}
                             </p>
                         </div>
                     </div>
@@ -71,119 +132,236 @@ export default function FormBuilderShow({ schema }: Props) {
                     </div>
                 </div>
 
-                <div className="grid gap-6 lg:grid-cols-3">
-                    {/* Main Content */}
-                    <div className="space-y-6 lg:col-span-2">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Description</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="whitespace-pre-wrap">
-                                    {schema.description || 'No description provided.'}
-                                </p>
-                            </CardContent>
-                        </Card>
+                {/* Description (only if provided) */}
+                {schema.description && (
+                    <Card>
+                        <CardContent className="py-4">
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                {schema.description}
+                            </p>
+                        </CardContent>
+                    </Card>
+                )}
 
+                {/* Main Content — Tabbed: Fields | Preview */}
+                <Tabs defaultValue="fields">
+                    <TabsList>
+                        <TabsTrigger value="fields">
+                            <ListChecks className="mr-1.5 h-4 w-4" />
+                            Fields
+                            <Badge variant="secondary" className="ml-1.5">
+                                {fieldCount}
+                            </Badge>
+                        </TabsTrigger>
+                        <TabsTrigger value="preview">
+                            <Eye className="mr-1.5 h-4 w-4" />
+                            Form Preview
+                        </TabsTrigger>
+                    </TabsList>
+
+                    {/* ── Fields Tab ── */}
+                    <TabsContent value="fields">
                         <Card>
-                            <CardHeader>
-                                <CardTitle>Form Fields ({fieldCount})</CardTitle>
-                            </CardHeader>
-                            <CardContent>
+                            <CardContent className="p-0">
                                 {fieldCount === 0 ? (
-                                    <p className="text-muted-foreground text-center py-8">
-                                        This form schema has no fields defined.
-                                    </p>
+                                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                                        <ListChecks className="h-10 w-10 text-muted-foreground/40" />
+                                        <p className="mt-3 text-sm text-muted-foreground">
+                                            This template has no fields defined yet.
+                                        </p>
+                                        <Link href={`/form-builder/${schema.id}/edit`} className="mt-3">
+                                            <Button variant="outline" size="sm">
+                                                <Edit className="mr-1.5 h-3.5 w-3.5" />
+                                                Add Fields
+                                            </Button>
+                                        </Link>
+                                    </div>
                                 ) : (
-                                    <div className="space-y-4">
-                                        {schema.schema.map((field: any, index: number) => (
-                                            <div key={field.id || index}>
-                                                <div className="flex items-start justify-between">
-                                                    <div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="font-medium">{field.label}</span>
-                                                            {field.required && (
-                                                                <Badge variant="destructive" className="text-xs">Required</Badge>
-                                                            )}
-                                                        </div>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            Type: {field.type} • Name: {field.name}
-                                                        </p>
-                                                        {field.placeholder && (
-                                                            <p className="text-sm text-muted-foreground">
-                                                                Placeholder: {field.placeholder}
-                                                            </p>
-                                                        )}
-                                                        {(field.type === 'select' || field.type === 'checkbox' || field.type === 'radio') && field.options && (
-                                                            <p className="text-sm text-muted-foreground">
-                                                                Options: {field.options.join(', ')}
-                                                            </p>
-                                                        )}
-                                                        {field.helpText && (
-                                                            <p className="text-sm text-muted-foreground">
-                                                                Help: {field.helpText}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                    <Badge variant="outline" className="capitalize">
-                                                        {field.type}
-                                                    </Badge>
-                                                </div>
-                                                {index < fieldCount - 1 && <Separator className="mt-4" />}
-                                            </div>
+                                    <div className="divide-y">
+                                        {fields.map((field: any, index: number) => (
+                                            <FieldRow
+                                                key={field.id || index}
+                                                field={field}
+                                                index={index}
+                                            />
                                         ))}
                                     </div>
                                 )}
                             </CardContent>
                         </Card>
-                    </div>
+                    </TabsContent>
 
-                    {/* Sidebar */}
-                    <div className="space-y-6">
+                    {/* ── Preview Tab ── */}
+                    <TabsContent value="preview">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Schema Details</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Version</p>
-                                    <p className="font-medium">v{schema.version}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Status</p>
-                                    <Badge variant={schema.is_active ? "default" : "secondary"}>
-                                        {schema.is_active ? 'Active' : 'Inactive'}
-                                    </Badge>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Created By</p>
-                                    <p className="font-medium">{schema.creator?.name ?? '—'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Last Updated</p>
-                                    <p className="font-medium">
-                                        {new Date(schema.updated_at).toLocaleString()}
+                                <CardTitle className="text-base">
+                                    {schema.name}
+                                </CardTitle>
+                                {schema.description && (
+                                    <p className="text-sm text-muted-foreground">
+                                        {schema.description}
                                     </p>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Usage</CardTitle>
+                                )}
                             </CardHeader>
                             <CardContent>
-                                <p className="text-sm text-muted-foreground mb-4">
-                                    This form schema can be assigned to change requests to collect structured data.
-                                </p>
-                                <div className="bg-muted p-3 rounded text-xs font-mono">
-                                    Schema ID: {schema.id}
-                                </div>
+                                {fieldCount === 0 ? (
+                                    <p className="text-sm text-muted-foreground py-8 text-center">
+                                        No fields to preview.
+                                    </p>
+                                ) : (
+                                    <DynamicForm
+                                        fields={fields}
+                                        values={previewValues}
+                                        onChange={(name, value) =>
+                                            setPreviewValues((prev) => ({
+                                                ...prev,
+                                                [name]: value,
+                                            }))
+                                        }
+                                        disabled
+                                    />
+                                )}
                             </CardContent>
                         </Card>
-                    </div>
-                </div>
+                    </TabsContent>
+                </Tabs>
+
+                {/* Sidebar-style metadata — rendered as a compact horizontal strip */}
+                <Card>
+                    <CardContent className="py-4">
+                        <div className="flex flex-wrap items-center gap-x-8 gap-y-2 text-sm">
+                            <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">Version</span>
+                                <Badge variant="outline">v{schema.version}</Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">Status</span>
+                                <Badge variant={schema.is_active ? 'default' : 'secondary'}>
+                                    {schema.is_active ? 'Active' : 'Inactive'}
+                                </Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="text-muted-foreground">Created by</span>
+                                <span className="font-medium">{schema.creator?.name ?? '—'}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Clock3 className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="text-muted-foreground">Updated</span>
+                                <span className="font-medium">
+                                    {new Date(schema.updated_at).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: 'numeric',
+                                    })}
+                                </span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </AppLayout>
+    );
+}
+
+/* ─── Field Row Component ─── */
+
+function FieldRow({ field, index }: { field: any; index: number }) {
+    const [expanded, setExpanded] = useState(false);
+    const Icon = FIELD_TYPE_ICONS[field.type] || Type;
+    const typeLabel = FIELD_TYPE_LABELS[field.type] || field.type;
+    const hasDetails =
+        field.placeholder ||
+        field.helpText ||
+        ((field.type === 'select' || field.type === 'checkbox' || field.type === 'radio') &&
+            field.options?.length > 0);
+
+    return (
+        <div
+            className={`group transition-colors ${hasDetails ? 'cursor-pointer' : ''} ${expanded ? 'bg-accent/30' : 'hover:bg-accent/20'}`}
+            onClick={() => hasDetails && setExpanded(!expanded)}
+        >
+            {/* Main row */}
+            <div className="flex items-center gap-4 px-5 py-3">
+                {/* Number */}
+                <span className="w-6 text-right text-xs font-medium text-muted-foreground tabular-nums">
+                    {index + 1}
+                </span>
+
+                {/* Icon */}
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border bg-muted/50">
+                    <Icon className="h-4 w-4 text-muted-foreground" />
+                </div>
+
+                {/* Label + name */}
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                        <span className="font-medium truncate">{field.label}</span>
+                        {field.required && (
+                            <span className="text-destructive text-xs font-semibold">*</span>
+                        )}
+                    </div>
+                    <p className="text-xs text-muted-foreground font-mono truncate">
+                        {field.name}
+                    </p>
+                </div>
+
+                {/* Type badge */}
+                <Badge variant="outline" className="shrink-0 text-xs capitalize">
+                    {typeLabel}
+                </Badge>
+
+                {/* Expand indicator */}
+                {hasDetails && (
+                    <div className="shrink-0 text-muted-foreground">
+                        {expanded ? (
+                            <ChevronDown className="h-4 w-4" />
+                        ) : (
+                            <ChevronRight className="h-4 w-4" />
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Expanded details */}
+            {expanded && hasDetails && (
+                <div className="border-t bg-muted/20 px-5 py-3 pl-[4.75rem]">
+                    <div className="space-y-2 text-sm">
+                        {field.placeholder && (
+                            <div>
+                                <span className="text-muted-foreground">Placeholder: </span>
+                                <span className="text-foreground">{field.placeholder}</span>
+                            </div>
+                        )}
+                        {field.helpText && (
+                            <div>
+                                <span className="text-muted-foreground">Help text: </span>
+                                <span className="text-foreground">{field.helpText}</span>
+                            </div>
+                        )}
+                        {(field.type === 'select' ||
+                            field.type === 'checkbox' ||
+                            field.type === 'radio') &&
+                            field.options?.length > 0 && (
+                                <div>
+                                    <span className="text-muted-foreground block mb-1">Options:</span>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {field.options.map((opt: string, i: number) => (
+                                            <Badge
+                                                key={i}
+                                                variant="secondary"
+                                                className="text-xs font-normal"
+                                            >
+                                                {opt}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }

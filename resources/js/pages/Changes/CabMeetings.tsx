@@ -53,7 +53,7 @@ export default function CabMeetings({ meetings }: Props) {
         >
             <Head title="CAB Meetings" />
 
-            <div className="space-y-6 p-6">
+            <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 {flash.message && (
                     <Alert>
                         <AlertDescription>{flash.message}</AlertDescription>
@@ -67,8 +67,8 @@ export default function CabMeetings({ meetings }: Props) {
 
                 <div className="flex items-center justify-between gap-3">
                     <div>
-                        <h1 className="text-2xl font-semibold">CAB Meetings</h1>
-                        <p className="text-sm text-muted-foreground">
+                        <h1 className="text-2xl font-bold">CAB Meetings</h1>
+                        <p className="text-muted-foreground">
                             Manage CAB agendas, outcomes, and meeting minutes.
                         </p>
                     </div>

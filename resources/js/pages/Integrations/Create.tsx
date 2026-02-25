@@ -98,7 +98,7 @@ export default function IntegrationsCreate({ clients, providers, initialProvider
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Create Integration</h1>
+                        <h1 className="text-2xl font-bold">Create Integration</h1>
                         <p className="text-muted-foreground">
                             Configure a provider connection for asset and workflow sync.
                         </p>

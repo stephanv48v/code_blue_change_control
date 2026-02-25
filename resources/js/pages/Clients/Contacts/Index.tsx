@@ -28,11 +28,11 @@ export default function ClientContactsIndex({ client, contacts }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`${client.name} Contacts`} />
 
-            <div className="space-y-6 p-6">
+            <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 <div className="flex items-start justify-between">
                     <div>
-                        <h1 className="text-2xl font-semibold">Contacts</h1>
-                        <p className="text-sm text-muted-foreground">
+                        <h1 className="text-2xl font-bold">Contacts</h1>
+                        <p className="text-muted-foreground">
                             {client.name} ({client.code})
                         </p>
                     </div>

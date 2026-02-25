@@ -60,7 +60,7 @@ export default function ContactCreate({ client }: Props) {
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Add Contact</h1>
+                        <h1 className="text-2xl font-bold">Add Contact</h1>
                         <p className="text-muted-foreground">
                             Add a new contact for {client.name}
                         </p>

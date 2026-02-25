@@ -62,6 +62,26 @@ class AdminController extends Controller
     }
 
     /**
+     * Update an existing role.
+     */
+    public function updateRole(Request $request, Role $role): RedirectResponse
+    {
+        $this->authorize('users.manage');
+
+        $validated = $request->validate([
+            'name' => "required|string|unique:roles,name,{$role->id}",
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'string|exists:permissions,name',
+        ]);
+
+        $role->update(['name' => $validated['name']]);
+        $role->syncPermissions($validated['permissions'] ?? []);
+
+        return redirect()->route('admin.roles')
+            ->with('message', "Role '{$validated['name']}' updated successfully.");
+    }
+
+    /**
      * Delete a role.
      */
     public function destroyRole(Role $role): RedirectResponse

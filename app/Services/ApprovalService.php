@@ -16,6 +16,9 @@ class ApprovalService
     // Minimum CAB members required for a valid vote
     const MIN_CAB_QUORUM = 3;
 
+    // Reduced quorum for emergency changes (ITIL emergency change authority)
+    const MIN_EMERGENCY_QUORUM = 1;
+
     public function __construct(
         private readonly ApprovalOrchestrationService $approvalOrchestrationService
     ) {}
@@ -87,7 +90,9 @@ class ApprovalService
         ]);
 
         if ($approval->due_at === null) {
-            $this->approvalOrchestrationService->initializeApprovalSla($approval, 48);
+            // Emergency changes get expedited SLA (4 hours vs 48 hours)
+            $slaHours = $changeRequest->change_type === 'emergency' ? 4 : 48;
+            $this->approvalOrchestrationService->initializeApprovalSla($approval, $slaHours);
         }
     }
 
@@ -216,8 +221,13 @@ class ApprovalService
         $votes = CabVote::with('user:id,name')
             ->where('change_request_id', $changeRequest->id)
             ->get();
-        
-        if ($votes->count() < self::MIN_CAB_QUORUM) {
+
+        // Emergency changes use a reduced quorum for expedited approval
+        $requiredQuorum = $changeRequest->change_type === 'emergency'
+            ? self::MIN_EMERGENCY_QUORUM
+            : self::MIN_CAB_QUORUM;
+
+        if ($votes->count() < $requiredQuorum) {
             return; // Not enough votes yet
         }
 
@@ -344,6 +354,43 @@ class ApprovalService
     }
 
     /**
+     * Bypass CAB voting for a change request (manager override).
+     *
+     * Approves the change and resolves the CAB approval tracker without
+     * requiring quorum. Only users with the 'changes.approve' permission
+     * should be allowed to invoke this.
+     */
+    public function bypassCabVoting(ChangeRequest $changeRequest, User $user, string $reason): void
+    {
+        DB::transaction(function () use ($changeRequest, $user, $reason) {
+            $bypassComment = "CAB vote bypassed by {$user->name}. Reason: {$reason}";
+
+            $changeRequest->update([
+                'status' => ChangeRequest::STATUS_APPROVED,
+                'approved_at' => now(),
+                'cab_conditions' => null,
+                'cab_conditions_status' => null,
+                'cab_conditions_confirmed_at' => null,
+                'cab_conditions_confirmed_by' => null,
+            ]);
+
+            Approval::where('change_request_id', $changeRequest->id)
+                ->where('type', Approval::TYPE_CAB)
+                ->update([
+                    'status' => Approval::STATUS_APPROVED,
+                    'responded_at' => now(),
+                    'comments' => $bypassComment,
+                ]);
+
+            $changeRequest->logEvent(
+                'cab_vote_bypassed',
+                $bypassComment,
+                $user->id
+            );
+        });
+    }
+
+    /**
      * Get all pending approvals for a client contact
      */
     public function getPendingForClient(ClientContact $contact): Collection
@@ -371,13 +418,19 @@ class ApprovalService
     public function getCabVoteSummary(ChangeRequest $changeRequest): array
     {
         $votes = CabVote::where('change_request_id', $changeRequest->id)->get();
-        
+
+        $requiredQuorum = $changeRequest->change_type === 'emergency'
+            ? self::MIN_EMERGENCY_QUORUM
+            : self::MIN_CAB_QUORUM;
+
         return [
             'total_votes' => $votes->count(),
             'approves' => $votes->where('vote', CabVote::VOTE_APPROVE)->count(),
             'rejects' => $votes->where('vote', CabVote::VOTE_REJECT)->count(),
             'abstains' => $votes->where('vote', CabVote::VOTE_ABSTAIN)->count(),
-            'quorum_met' => $votes->count() >= self::MIN_CAB_QUORUM,
+            'quorum_met' => $votes->count() >= $requiredQuorum,
+            'required_quorum' => $requiredQuorum,
+            'is_emergency' => $changeRequest->change_type === 'emergency',
             'votes' => $votes->map(fn($v) => [
                 'user' => $v->user?->name ?? 'Unknown',
                 'vote' => $v->vote,

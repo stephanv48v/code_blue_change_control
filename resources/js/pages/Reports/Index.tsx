@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import {
     AlertTriangle,
     ArrowRight,
@@ -158,7 +158,7 @@ const REPORT_CATALOGUE = [
         title: 'CAB Meeting Summary',
         description: 'CAB agenda items reviewed, votes cast, and outcome of each meeting.',
         category: 'Governance',
-        href: '/cab-agenda/history',
+        href: '/export/cab-history',
     },
     {
         id: 'overdue-changes',
@@ -260,17 +260,17 @@ export default function ReportsIndex({
                 {/* Header */}
                 <div className="flex items-start justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Reports</h1>
+                        <h1 className="text-2xl font-bold">Reports</h1>
                         <p className="text-muted-foreground">
                             Live metrics and pre-built exportable reports for your change control data.
                         </p>
                     </div>
-                    <Link href="/export/changes">
+                    <a href="/export/changes">
                         <Button variant="outline">
                             <Download className="mr-2 h-4 w-4" />
                             Export all changes
                         </Button>
-                    </Link>
+                    </a>
                 </div>
 
                 {/* This-month snapshot */}
@@ -584,13 +584,13 @@ export default function ReportsIndex({
                                     <p className="text-xs text-muted-foreground leading-relaxed">
                                         {report.description}
                                     </p>
-                                    <Link href={report.href}>
+                                    <a href={report.href}>
                                         <Button variant="outline" size="sm" className="w-full">
                                             <Download className="mr-2 h-3 w-3" />
                                             Generate
                                             <ArrowRight className="ml-auto h-3 w-3" />
                                         </Button>
-                                    </Link>
+                                    </a>
                                 </CardContent>
                             </Card>
                         ))}

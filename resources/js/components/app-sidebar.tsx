@@ -10,7 +10,6 @@ import {
     ShieldCheck,
     Settings
 } from 'lucide-react';
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -40,7 +39,7 @@ const mainNavItems: NavItem[] = [
         requiredPermission: 'changes.view',
     },
     {
-        title: 'My Scheduled Changes',
+        title: 'Scheduled Changes',
         href: '/changes/my-scheduled',
         icon: CalendarClock,
         requiredPermission: 'changes.view',
@@ -83,14 +82,6 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Documentation',
-        href: '#',
-        icon: FileText,
-    },
-];
-
 export function AppSidebar() {
     const { auth } = usePage<SharedData>().props;
     const permissions = auth.user?.permissions ?? [];
@@ -122,7 +113,6 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
