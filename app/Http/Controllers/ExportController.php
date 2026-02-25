@@ -242,6 +242,53 @@ class ExportController extends Controller
     }
 
     /**
+     * Export upcoming changes this week to CSV
+     */
+    public function upcomingChanges(Request $request, WorkflowService $workflowService): StreamedResponse
+    {
+        $this->authorize('changes.view');
+
+        $changes = $workflowService->getUpcomingChanges(now()->startOfWeek(), now()->endOfWeek());
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="upcoming_changes_' . now()->format('Y-m-d') . '.csv"',
+        ];
+
+        return response()->stream(function () use ($changes) {
+            $file = fopen('php://output', 'w');
+
+            fputcsv($file, [
+                'Change ID',
+                'Title',
+                'Client',
+                'Status',
+                'Priority',
+                'Risk Level',
+                'Scheduled Start',
+                'Scheduled End',
+                'Assigned Engineer',
+            ]);
+
+            foreach ($changes as $change) {
+                fputcsv($file, [
+                    $this->csvSafe($change->change_id),
+                    $this->csvSafe($change->title),
+                    $this->csvSafe($change->client?->name ?? 'N/A'),
+                    $change->status,
+                    $change->priority,
+                    $change->risk_level ?? '',
+                    $change->scheduled_start_date?->format('Y-m-d H:i') ?? '',
+                    $change->scheduled_end_date?->format('Y-m-d H:i') ?? '',
+                    $this->csvSafe($change->assignedEngineer?->name ?? 'Unassigned'),
+                ]);
+            }
+
+            fclose($file);
+        }, 200, $headers);
+    }
+
+    /**
      * Print view for a change request
      */
     public function printChange(ChangeRequest $change): Response

@@ -69,6 +69,9 @@ class ChangeWorkflowPolicyTest extends TestCase
             'priority' => 'critical',
             'change_type' => 'emergency',
             'risk_level' => 'high',
+            'implementation_plan' => 'Apply firewall config in production',
+            'backout_plan' => 'Rollback to last known good state',
+            'test_plan' => 'Verify connectivity and rule table',
         ]);
 
         $this->actingAs($user)

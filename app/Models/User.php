@@ -70,4 +70,10 @@ class User extends Authenticatable
     {
         return $this->provider === 'microsoft';
     }
+
+    public function cabMeetingInvitations(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(CabMeeting::class, 'cab_meeting_user')
+            ->withTimestamps();
+    }
 }

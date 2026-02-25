@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ApprovalController;
+use App\Http\Controllers\CabSettingsController;
 use App\Http\Controllers\ConnectWiseTicketController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\WorkflowController;
@@ -153,6 +154,10 @@ Route::middleware(['auth:web'])->group(function () {
         Route::post('/roles', [AdminController::class, 'storeRole'])->name('admin.roles.store');
         Route::put('/roles/{role}', [AdminController::class, 'updateRole'])->name('admin.roles.update');
         Route::delete('/roles/{role}', [AdminController::class, 'destroyRole'])->name('admin.roles.destroy');
+
+        // CAB Settings
+        Route::get('/cab-settings', [CabSettingsController::class, 'index'])->name('admin.cab-settings');
+        Route::put('/cab-settings', [CabSettingsController::class, 'update'])->name('admin.cab-settings.update');
     });
 
     // Form Builder - requires forms.manage permission
@@ -290,13 +295,16 @@ Route::middleware(['auth:web'])->group(function () {
             ->name('changes.bypass-cab-voting')
             ->middleware('can:changes.approve');
 
-        // Workflow routes
+        // Workflow routes (policy enforces changes.edit; approve/reject also need changes.approve)
         Route::post('/changes/{change}/transition', [WorkflowController::class, 'transition'])
-            ->name('changes.transition');
+            ->name('changes.transition')
+            ->middleware('can:changes.edit');
         Route::post('/changes/{change}/schedule', [WorkflowController::class, 'schedule'])
-            ->name('changes.schedule');
+            ->name('changes.schedule')
+            ->middleware('can:changes.edit');
         Route::post('/changes/{change}/assign-engineer', [WorkflowController::class, 'assignEngineer'])
-            ->name('changes.assign-engineer');
+            ->name('changes.assign-engineer')
+            ->middleware('can:changes.edit');
         Route::get('/changes/{change}/conflicts', [WorkflowController::class, 'conflicts'])
             ->name('changes.conflicts');
         Route::get('/cab-agenda', [WorkflowController::class, 'cabAgenda'])
@@ -304,13 +312,25 @@ Route::middleware(['auth:web'])->group(function () {
         Route::get('/cab-agenda/meetings', [WorkflowController::class, 'cabMeetings'])
             ->name('cab.meetings');
         Route::post('/cab-agenda/meetings/generate', [WorkflowController::class, 'generateCabMeeting'])
-            ->name('cab.meetings.generate');
+            ->name('cab.meetings.generate')
+            ->middleware('can:changes.approve');
         Route::put('/cab-agenda/meetings/{meeting}', [WorkflowController::class, 'updateCabMeeting'])
-            ->name('cab.meetings.update');
+            ->name('cab.meetings.update')
+            ->middleware('can:changes.approve');
         Route::post('/cab-agenda/meetings/{meeting}/items', [WorkflowController::class, 'addAgendaItem'])
-            ->name('cab.meetings.items.add');
+            ->name('cab.meetings.items.add')
+            ->middleware('can:changes.approve');
         Route::delete('/cab-agenda/meetings/{meeting}/items/{change}', [WorkflowController::class, 'removeAgendaItem'])
-            ->name('cab.meetings.items.remove');
+            ->name('cab.meetings.items.remove')
+            ->middleware('can:changes.approve');
+        Route::put('/cab-agenda/meetings/{meeting}/talking-points', [WorkflowController::class, 'updateTalkingPoints'])
+            ->name('cab.meetings.talking-points')
+            ->middleware('can:changes.approve');
+        Route::get('/cab-agenda/meetings/{meeting}/show', [WorkflowController::class, 'showMeeting'])
+            ->name('cab.meetings.show');
+        Route::post('/cab-agenda/meetings/{meeting}/invite', [WorkflowController::class, 'inviteMembers'])
+            ->name('cab.meetings.invite')
+            ->middleware('can:changes.approve');
         Route::get('/cab-agenda/history', [WorkflowController::class, 'cabHistory'])
             ->name('cab.history');
 
@@ -329,6 +349,8 @@ Route::middleware(['auth:web'])->group(function () {
             ->name('export.changes');
         Route::get('/export/cab-history', [ExportController::class, 'cabHistory'])
             ->name('export.cab-history');
+        Route::get('/export/upcoming-changes', [ExportController::class, 'upcomingChanges'])
+            ->name('export.upcoming-changes');
         Route::get('/changes/{change}/print', [ExportController::class, 'printChange'])
             ->name('changes.print');
     });

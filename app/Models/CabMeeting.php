@@ -20,6 +20,7 @@ class CabMeeting extends Model
         'status',
         'agenda_notes',
         'minutes',
+        'talking_points',
         'created_by',
         'completed_by',
         'completed_at',
@@ -28,6 +29,7 @@ class CabMeeting extends Model
     protected $casts = [
         'meeting_date' => 'datetime',
         'completed_at' => 'datetime',
+        'talking_points' => 'array',
     ];
 
     public function creator(): BelongsTo
@@ -44,6 +46,12 @@ class CabMeeting extends Model
     {
         return $this->belongsToMany(ChangeRequest::class, 'cab_meeting_change_request')
             ->withPivot(['decision', 'decision_notes', 'discussed_at'])
+            ->withTimestamps();
+    }
+
+    public function invitedMembers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'cab_meeting_user')
             ->withTimestamps();
     }
 }
