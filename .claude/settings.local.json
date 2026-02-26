@@ -5,7 +5,12 @@
       "Bash(powershell.exe -Command \"\\(Get-Command php\\).Source\")",
       "Bash(\"/c/Users/steph/.config/herd/bin/php.bat\" artisan test)",
       "Bash(/c/Users/steph/.config/herd/bin/php.bat /c/Users/steph/Herd/code_blue_change_control/artisan test --no-ansi)",
-      "Bash(/c/Users/steph/.config/herd/bin/php.bat /c/Users/steph/Herd/code_blue_change_control/artisan make:migration add_performance_indexes_to_change_requests --no-ansi)"
+      "Bash(/c/Users/steph/.config/herd/bin/php.bat /c/Users/steph/Herd/code_blue_change_control/artisan make:migration add_performance_indexes_to_change_requests --no-ansi)",
+      "Bash(npx eslint resources/js/components/changes/event-calendar.tsx resources/js/pages/Changes/Index.tsx)",
+      "Bash(npx eslint resources/js/components/FormBuilder/DynamicForm.tsx resources/js/components/FormBuilder/FieldPalette.tsx resources/js/components/changes/cab/CreateMeetingModal.tsx resources/js/pages/FormBuilder/Create.tsx resources/js/pages/FormBuilder/Index.tsx resources/js/pages/FormBuilder/Show.tsx resources/js/types/changes.ts --no-eslintrc --rule '{\"\"@typescript-eslint/no-explicit-any\"\": \"\"error\"\"}' --parser @typescript-eslint/parser --plugin @typescript-eslint)",
+      "Bash(npx eslint resources/js/components/FormBuilder/DynamicForm.tsx resources/js/components/FormBuilder/FieldPalette.tsx resources/js/components/changes/cab/CreateMeetingModal.tsx resources/js/pages/FormBuilder/Create.tsx resources/js/pages/FormBuilder/Index.tsx resources/js/pages/FormBuilder/Show.tsx resources/js/types/changes.ts)",
+      "Bash(npm run lint)",
+      "Bash(npx eslint resources/js --fix)"
     ]
   }
 }

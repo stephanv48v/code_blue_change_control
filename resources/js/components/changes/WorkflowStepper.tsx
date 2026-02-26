@@ -44,7 +44,6 @@ export function WorkflowStepper({ currentStatus }: WorkflowStepperProps) {
             {STEPS.map((step, index) => {
                 const isComplete = index < currentIndex;
                 const isCurrent = index === currentIndex;
-                const isFuture = index > currentIndex;
 
                 return (
                     <div key={step.key} className="flex items-center">

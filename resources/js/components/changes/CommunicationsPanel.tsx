@@ -4,8 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { CollapsibleSection } from './CollapsibleSection';
 import type { ChangeRequest, SharedData } from '@/types';
+import { CollapsibleSection } from './CollapsibleSection';
 
 interface CommunicationsPanelProps {
     change: ChangeRequest;

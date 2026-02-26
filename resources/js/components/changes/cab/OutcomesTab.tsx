@@ -3,13 +3,12 @@ import {
     AlertTriangle,
     BarChart3,
     CheckCircle,
-    Clock,
     XCircle,
 } from 'lucide-react';
+import type { ElementType } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { ElementType } from 'react';
 
 interface Meeting {
     id: number;

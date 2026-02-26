@@ -1,4 +1,4 @@
-import type { Client, ClientContact } from './clients';
+import type { ClientContact } from './clients';
 
 export type User = {
     id: number;

@@ -1,6 +1,6 @@
 import { Clock3 } from 'lucide-react';
-import { CollapsibleSection } from './CollapsibleSection';
 import type { WorkflowEvent } from '@/types';
+import { CollapsibleSection } from './CollapsibleSection';
 
 interface WorkflowEventStreamProps {
     events: WorkflowEvent[];

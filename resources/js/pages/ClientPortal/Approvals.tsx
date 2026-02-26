@@ -2,7 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { CheckCircle, Clock, XCircle, FileText, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import ClientPortalLayout from '@/layouts/client-portal-layout';
 

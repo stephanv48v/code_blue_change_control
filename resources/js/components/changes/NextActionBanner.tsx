@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { router, useForm, usePage } from '@inertiajs/react';
 import {
     AlertCircle,
@@ -13,15 +12,16 @@ import {
     Vote,
     XCircle,
 } from 'lucide-react';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import type { CabVoteSummary, ChangeRequest, Engineer, SharedData, UserCabVote } from '@/types';
 import { CabConditionsBanner } from './CabConditionsBanner';
 import { CabVotePanel } from './CabVotePanel';
 import { ScheduleAssignPanel } from './ScheduleAssignPanel';
-import type { CabVoteSummary, ChangeRequest, Engineer, SharedData, UserCabVote } from '@/types';
 
 interface NextActionBannerProps {
     change: ChangeRequest;

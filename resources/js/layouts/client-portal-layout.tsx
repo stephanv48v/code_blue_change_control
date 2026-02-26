@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Building2, CheckCircle, LayoutGrid, LogOut, Menu, User } from 'lucide-react';
+import { Building2, CheckCircle, LayoutGrid, LogOut, Menu } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,14 +17,13 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { useInitials } from '@/hooks/use-initials';
-import type { BreadcrumbItem, ClientContact } from '@/types';
+import type { ClientContact } from '@/types';
 
 type Props = {
     children: React.ReactNode;
-    breadcrumbs?: BreadcrumbItem[];
 };
 
-export default function ClientPortalLayout({ children, breadcrumbs = [] }: Props) {
+export default function ClientPortalLayout({ children }: Props) {
     const { auth } = usePage().props;
     const contact = auth.contact as ClientContact | null;
     const getInitials = useInitials();

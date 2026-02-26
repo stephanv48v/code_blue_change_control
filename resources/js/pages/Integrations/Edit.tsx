@@ -1,8 +1,8 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import ProviderSetupGuide from '@/components/integrations/provider-setup-guide';
 import InputError from '@/components/input-error';
+import ProviderSetupGuide from '@/components/integrations/provider-setup-guide';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,8 +15,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { getProviderJsonTemplate } from '@/lib/integration-provider-meta';
 import AppLayout from '@/layouts/app-layout';
+import { getProviderJsonTemplate } from '@/lib/integration-provider-meta';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem, Client, DiscoveredExternalClient, IntegrationConnection } from '@/types';
 

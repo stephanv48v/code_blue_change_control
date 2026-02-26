@@ -6,9 +6,9 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ClientCombobox } from '@/components/ui/client-combobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ClientCombobox } from '@/components/ui/client-combobox';
 import {
     Select,
     SelectContent,
@@ -65,7 +65,7 @@ const changeTypeOptions = [
     { value: 'security_patch', label: 'Security Patch' },
 ];
 
-export default function ChangeCreate({ clients, formSchemas, assets, clientApprovers, hasConnectWise = false }: Props) {
+export default function ChangeCreate({ clients, formSchemas, assets, clientApprovers }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         client_id: '',
         title: '',

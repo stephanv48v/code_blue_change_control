@@ -1,8 +1,8 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { Check, CheckCircle2, Copy, ExternalLink, Plus, RefreshCw, Settings2, Shield, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import InputError from '@/components/input-error';
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -88,7 +88,6 @@ export default function IntegrationSettings({ providers, connections, microsoftS
                             provider={provider}
                             label={label}
                             connections={connectionsByProvider[provider] ?? []}
-                            allProviders={safeProviders}
                             onSync={runSync}
                         />
                     ))}
@@ -106,11 +105,10 @@ type ProviderCardProps = {
     provider: string;
     label: string;
     connections: IntegrationConnection[];
-    allProviders: Record<string, string>;
     onSync: (id: number) => void;
 };
 
-function ProviderCard({ provider, label, connections, allProviders, onSync }: ProviderCardProps) {
+function ProviderCard({ provider, label, connections, onSync }: ProviderCardProps) {
     const guide = getProviderSetupGuide(provider);
     const count = connections.length;
 

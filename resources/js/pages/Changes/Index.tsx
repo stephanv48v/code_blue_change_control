@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
-import type { BreadcrumbItem, ChangeRequest } from '@/types';
+import type { BreadcrumbItem, ChangeRequest, SharedData } from '@/types';
 
 type Props = {
     changes?: {
@@ -96,7 +96,7 @@ const CHANGE_TYPES: Record<string, string> = {
 };
 
 export default function ChangeIndex({ changes, filters, statuses, clients, requesters }: Props) {
-    const { auth } = usePage<import('@/types').SharedData>().props;
+    const { auth } = usePage<SharedData>().props;
     const canCreate = auth.user?.permissions?.includes('changes.create') ?? false;
 
     const safeChanges = changes ?? { data: [] };

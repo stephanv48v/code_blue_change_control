@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
     BarChart3,
@@ -9,16 +8,17 @@ import {
     PlusCircle,
     Users,
 } from 'lucide-react';
+import { useState } from 'react';
+import { CreateMeetingModal } from '@/components/changes/cab/CreateMeetingModal';
+import { OutcomesTab } from '@/components/changes/cab/OutcomesTab';
+import { ReviewHistoryTab } from '@/components/changes/cab/ReviewHistoryTab';
+import { UpcomingChangesTab } from '@/components/changes/cab/UpcomingChangesTab';
+import { EventCalendar, type CalendarEvent } from '@/components/changes/event-calendar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { EventCalendar, type CalendarEvent } from '@/components/changes/event-calendar';
-import { CreateMeetingModal } from '@/components/changes/cab/CreateMeetingModal';
-import { OutcomesTab } from '@/components/changes/cab/OutcomesTab';
-import { UpcomingChangesTab } from '@/components/changes/cab/UpcomingChangesTab';
-import { ReviewHistoryTab } from '@/components/changes/cab/ReviewHistoryTab';
 import AppLayout from '@/layouts/app-layout';
 import type { SharedData } from '@/types';
 
@@ -181,7 +181,6 @@ export default function CabAgenda({
     availableChanges,
     cabMembers,
     upcomingChanges,
-    cabSettings,
 }: Props) {
     const { flash, auth } = usePage<SharedData>().props;
 
@@ -396,7 +395,6 @@ export default function CabAgenda({
                 onOpenChange={setCreateModalOpen}
                 availableChanges={availableChanges}
                 cabMembers={cabMembers}
-                defaultMeetingTime={cabSettings?.default_meeting_time}
             />
         </AppLayout>
     );

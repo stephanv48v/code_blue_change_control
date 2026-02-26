@@ -18,7 +18,7 @@ export type FieldType = {
     type: string;
     label: string;
     icon: React.ReactNode;
-    defaultConfig: Record<string, any>;
+    defaultConfig: Record<string, unknown>;
 };
 
 export const FIELD_TYPES: FieldType[] = [

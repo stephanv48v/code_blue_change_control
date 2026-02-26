@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import {
     AlignLeft,
@@ -21,11 +20,13 @@ import {
     Type,
     User,
 } from 'lucide-react';
+import { useState } from 'react';
+import DynamicForm from '@/components/FormBuilder/DynamicForm';
+import type { FormField } from '@/components/FormBuilder/FormCanvas';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import DynamicForm from '@/components/FormBuilder/DynamicForm';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem, FormSchema } from '@/types';
@@ -68,7 +69,7 @@ const FIELD_TYPE_LABELS: Record<string, string> = {
 
 export default function FormBuilderShow({ schema }: Props) {
     const { delete: destroy, processing } = useForm();
-    const [previewValues, setPreviewValues] = useState<Record<string, any>>({});
+    const [previewValues, setPreviewValues] = useState<Record<string, unknown>>({});
 
     const handleDelete = () => {
         if (confirm('Are you sure you want to delete this template?')) {
@@ -84,7 +85,7 @@ export default function FormBuilderShow({ schema }: Props) {
 
     const fields = Array.isArray(schema.schema) ? schema.schema : [];
     const fieldCount = fields.length;
-    const requiredCount = fields.filter((f: any) => f.required).length;
+    const requiredCount = fields.filter((f: { required?: boolean }) => f.required).length;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -178,7 +179,7 @@ export default function FormBuilderShow({ schema }: Props) {
                                     </div>
                                 ) : (
                                     <div className="divide-y">
-                                        {fields.map((field: any, index: number) => (
+                                        {fields.map((field: FormField, index: number) => (
                                             <FieldRow
                                                 key={field.id || index}
                                                 field={field}
@@ -267,7 +268,7 @@ export default function FormBuilderShow({ schema }: Props) {
 
 /* ─── Field Row Component ─── */
 
-function FieldRow({ field, index }: { field: any; index: number }) {
+function FieldRow({ field, index }: { field: FormField; index: number }) {
     const [expanded, setExpanded] = useState(false);
     const Icon = FIELD_TYPE_ICONS[field.type] || Type;
     const typeLabel = FIELD_TYPE_LABELS[field.type] || field.type;

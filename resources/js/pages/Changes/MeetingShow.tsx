@@ -1,16 +1,13 @@
-import { useState } from 'react';
 import { Head, Link, usePage, router } from '@inertiajs/react';
 import { useForm } from '@inertiajs/react';
 import {
     ArrowLeft,
     Users,
-    CalendarDays,
     CheckCircle,
     Clock,
     FileText,
     Plus,
     Vote,
-    Shield,
     Search,
     ChevronDown,
     ChevronRight,
@@ -18,14 +15,13 @@ import {
     ShieldOff,
     ArrowRight,
 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useState } from 'react';
+import { TalkingPointsSection } from '@/components/changes/cab/TalkingPointsSection';
+import { CabVotePanel } from '@/components/changes/CabVotePanel';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import {
     Dialog,
     DialogContent,
@@ -34,9 +30,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { TalkingPointsSection } from '@/components/changes/cab/TalkingPointsSection';
-import { CabVotePanel } from '@/components/changes/CabVotePanel';
 import type { CabVoteSummary, UserCabVote, CabMember, CabMeetingDetail, BreadcrumbItem, SharedData } from '@/types';
 
 interface Props {
@@ -136,7 +133,6 @@ export default function MeetingShow({
         );
     });
 
-    const filteredIds = new Set(filteredAvailable.map((c) => c.id));
     const allFilteredSelected = filteredAvailable.length > 0 && filteredAvailable.every((c) => selectedIds.has(c.id));
 
     const toggleSelect = (id: number) => {

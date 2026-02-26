@@ -231,7 +231,7 @@ export default function FormBuilderCreate({ templates = [] }: Props) {
                                             </div>
                                             <DynamicForm
                                                 fields={data.schema}
-                                                values={previewValues as Record<string, any>}
+                                                values={previewValues as Record<string, unknown>}
                                                 onChange={(name, value) =>
                                                     setPreviewValues((prev) => ({ ...prev, [name]: value }))
                                                 }
