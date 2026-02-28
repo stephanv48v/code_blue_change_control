@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Shield, Building2, Cog, ArrowRight } from 'lucide-react';
+import { Users, Shield, Building2, Cog, ArrowRight, Vote } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -90,6 +90,30 @@ export default function AdminIndex() {
                             <Link href="/clients">
                                 <Button className="w-full">
                                     Manage Clients
+                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            </Link>
+                        </CardContent>
+                    </Card>
+
+                    {/* CAB Settings */}
+                    <Card className="hover:border-primary/50 transition-colors">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Vote className="h-5 w-5 text-orange-500" />
+                                CAB Settings
+                            </CardTitle>
+                            <CardDescription>
+                                Change Advisory Board configuration
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground mb-4">
+                                Configure quorum, notifications, SLA, and meeting defaults for CAB.
+                            </p>
+                            <Link href="/admin/cab-settings">
+                                <Button className="w-full">
+                                    CAB Settings
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                             </Link>

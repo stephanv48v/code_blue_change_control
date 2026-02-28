@@ -31,6 +31,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { CollapsibleSection } from '@/components/changes/CollapsibleSection';
 import { CabVotePanel } from '@/components/changes/CabVotePanel';
+import { TalkingPointsSection, type TalkingPoint } from '@/components/changes/cab/TalkingPointsSection';
 import type { CabVoteSummary, UserCabVote } from '@/types';
 
 interface ChangeRequest {
@@ -63,6 +64,7 @@ interface TodaysMeetingTabProps {
     isCabMember: boolean;
     canManageMeetings: boolean;
     availableChanges: ChangeRequest[];
+    talkingPoints?: TalkingPoint[];
 }
 
 const priorityColors: Record<string, string> = {
@@ -88,6 +90,7 @@ export function TodaysMeetingTab({
     isCabMember,
     canManageMeetings,
     availableChanges,
+    talkingPoints = [],
 }: TodaysMeetingTabProps) {
     const [expandedId, setExpandedId] = useState<number | null>(null);
     const [closeMeetingOpen, setCloseMeetingOpen] = useState(false);
@@ -240,6 +243,15 @@ export function TodaysMeetingTab({
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Talking Points / Checklist */}
+            {meeting && (
+                <TalkingPointsSection
+                    meetingId={meeting.id}
+                    talkingPoints={talkingPoints}
+                    canEdit={canManageMeetings && meeting.status === 'planned'}
+                />
+            )}
 
             {/* Add Changes to Agenda — Bulk Select */}
             {canEditAgenda && availableChanges.length > 0 && (

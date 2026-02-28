@@ -58,14 +58,6 @@ export default function MyScheduledChanges({ changes, mine_only, range }: Props)
             };
         });
 
-    const toggleFilter = () => {
-        router.get(
-            '/changes/my-scheduled',
-            mine_only ? {} : { mine_only: '1' },
-            { preserveState: true, replace: true },
-        );
-    };
-
     const pageTitle = mine_only ? 'My Scheduled Changes' : 'Scheduled Changes';
 
     return (
@@ -94,19 +86,26 @@ export default function MyScheduledChanges({ changes, mine_only, range }: Props)
                         <Button
                             variant={mine_only ? 'default' : 'outline'}
                             size="sm"
-                            onClick={toggleFilter}
+                            onClick={() => {
+                                if (!mine_only) {
+                                    router.get('/changes/my-scheduled', { mine_only: '1' }, { preserveState: true, replace: true });
+                                }
+                            }}
                         >
-                            {mine_only ? (
-                                <>
-                                    <User className="mr-1 h-4 w-4" />
-                                    My Changes
-                                </>
-                            ) : (
-                                <>
-                                    <Users className="mr-1 h-4 w-4" />
-                                    All Changes
-                                </>
-                            )}
+                            <User className="mr-1 h-4 w-4" />
+                            My Changes
+                        </Button>
+                        <Button
+                            variant={!mine_only ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => {
+                                if (mine_only) {
+                                    router.get('/changes/my-scheduled', { mine_only: '0' }, { preserveState: true, replace: true });
+                                }
+                            }}
+                        >
+                            <Users className="mr-1 h-4 w-4" />
+                            All Changes
                         </Button>
                         <Link href="/changes">
                             <Button variant="outline" size="sm">Back to Change Requests</Button>

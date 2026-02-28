@@ -509,7 +509,7 @@ class ChangeRequestController extends Controller
     public function myScheduledChanges(Request $request): Response
     {
         $user = $request->user();
-        $mineOnly = $request->boolean('mine_only');
+        $mineOnly = ! $request->has('mine_only') || $request->boolean('mine_only');
         $windowStart = Carbon::now()->startOfMonth()->subMonths(3);
         $windowEnd = Carbon::now()->endOfMonth()->addMonths(9);
 

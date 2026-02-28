@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AppSetting;
 use App\Models\Approval;
 use App\Models\CabVote;
 use App\Models\ChangeRequest;
@@ -13,11 +14,15 @@ use Illuminate\Support\Facades\DB;
 
 class ApprovalService
 {
-    // Minimum CAB members required for a valid vote
-    const MIN_CAB_QUORUM = 3;
+    public static function getCabQuorum(): int
+    {
+        return (int) AppSetting::get('cab.quorum', 3);
+    }
 
-    // Reduced quorum for emergency changes (ITIL emergency change authority)
-    const MIN_EMERGENCY_QUORUM = 1;
+    public static function getEmergencyQuorum(): int
+    {
+        return (int) AppSetting::get('cab.emergency_quorum', 1);
+    }
 
     public function __construct(
         private readonly ApprovalOrchestrationService $approvalOrchestrationService
@@ -90,8 +95,9 @@ class ApprovalService
         ]);
 
         if ($approval->due_at === null) {
-            // Emergency changes get expedited SLA (4 hours vs 48 hours)
-            $slaHours = $changeRequest->change_type === 'emergency' ? 4 : 48;
+            $slaHours = $changeRequest->change_type === 'emergency'
+                ? (int) AppSetting::get('cab.sla_hours_emergency', 4)
+                : (int) AppSetting::get('cab.sla_hours_standard', 48);
             $this->approvalOrchestrationService->initializeApprovalSla($approval, $slaHours);
         }
     }
@@ -224,8 +230,8 @@ class ApprovalService
 
         // Emergency changes use a reduced quorum for expedited approval
         $requiredQuorum = $changeRequest->change_type === 'emergency'
-            ? self::MIN_EMERGENCY_QUORUM
-            : self::MIN_CAB_QUORUM;
+            ? self::getEmergencyQuorum()
+            : self::getCabQuorum();
 
         if ($votes->count() < $requiredQuorum) {
             return; // Not enough votes yet
@@ -420,8 +426,8 @@ class ApprovalService
         $votes = CabVote::where('change_request_id', $changeRequest->id)->get();
 
         $requiredQuorum = $changeRequest->change_type === 'emergency'
-            ? self::MIN_EMERGENCY_QUORUM
-            : self::MIN_CAB_QUORUM;
+            ? self::getEmergencyQuorum()
+            : self::getCabQuorum();
 
         return [
             'total_votes' => $votes->count(),

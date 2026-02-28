@@ -158,6 +158,49 @@ export type UserCabVote = {
     conditions?: string | null;
 } | null;
 
+export type CabMember = {
+    id: number;
+    name: string;
+    email: string;
+};
+
+export type CabMeetingDetail = {
+    id: number;
+    meeting_date: string;
+    status: 'planned' | 'completed' | 'cancelled';
+    agenda_notes: string | null;
+    minutes: string | null;
+    talking_points: Array<{ id: string; text: string; checked: boolean }> | null;
+    created_by: number | null;
+    completed_by: number | null;
+    completed_at: string | null;
+    creator: { id: number; name: string } | null;
+    completer: { id: number; name: string } | null;
+    invited_members: CabMember[];
+    invited_members_count?: number;
+    change_requests_count?: number;
+    change_requests: Array<{
+        id: number;
+        change_id: string;
+        title: string;
+        status: string;
+        priority: string;
+        description?: string | null;
+        risk_level?: string | null;
+        change_type?: string | null;
+        client?: { id: number; name: string } | null;
+        requester?: { name: string } | null;
+        cab_votes?: Array<{
+            id: number;
+            user_id: number;
+            vote: string;
+            comments?: string | null;
+            conditional_terms?: string | null;
+            user?: { name: string } | null;
+        }>;
+    }>;
+};
+
 export type AuditEvent = {
     id: number;
     auditable_type: string;

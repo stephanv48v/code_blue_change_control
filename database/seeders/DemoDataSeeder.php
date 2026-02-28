@@ -2,7 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\AppSetting;
 use App\Models\Approval;
+use App\Models\CabMeeting;
 use App\Models\ChangeRequest;
 use App\Models\ChangeRunbookStep;
 use App\Models\Client;
@@ -12,6 +14,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DemoDataSeeder extends Seeder
 {
@@ -57,6 +60,22 @@ class DemoDataSeeder extends Seeder
         ]);
         if (! $lisa->hasRole('MSP Admin')) {
             $lisa->assignRole('MSP Admin');
+        }
+
+        $david = User::firstOrCreate(['email' => 'david.kim@codeblue.com'], [
+            'name'     => 'David Kim',
+            'password' => Hash::make('password'),
+        ]);
+        if (! $david->hasRole('CAB Member')) {
+            $david->assignRole('CAB Member');
+        }
+
+        $nina = User::firstOrCreate(['email' => 'nina.reeves@codeblue.com'], [
+            'name'     => 'Nina Reeves',
+            'password' => Hash::make('password'),
+        ]);
+        if (! $nina->hasRole('CAB Member')) {
+            $nina->assignRole('CAB Member');
         }
 
         $engineers = [$james, $amy, $sarah];
@@ -519,6 +538,81 @@ class DemoDataSeeder extends Seeder
             ]);
         }
 
+        // ── CAB Meetings ───────────────────────────────────────────────────
+
+        $todayMeeting = CabMeeting::firstOrCreate(
+            ['meeting_date' => Carbon::today()->setTime(9, 0)],
+            [
+                'status' => CabMeeting::STATUS_PLANNED,
+                'created_by' => $sarah->id,
+                'talking_points' => [
+                    ['id' => Str::uuid()->toString(), 'text' => 'Review high-risk change backout plans', 'checked' => true],
+                    ['id' => Str::uuid()->toString(), 'text' => 'Confirm client notification windows for scheduled changes', 'checked' => false],
+                    ['id' => Str::uuid()->toString(), 'text' => 'Discuss emergency change threshold policy', 'checked' => false],
+                    ['id' => Str::uuid()->toString(), 'text' => 'Review outstanding CAB conditions awaiting confirmation', 'checked' => false],
+                ],
+            ]
+        );
+
+        // Attach pending-approval changes that require CAB to today's meeting
+        $cabPendingIds = ChangeRequest::where('status', 'pending_approval')
+            ->where('requires_cab_approval', true)
+            ->pluck('id')
+            ->all();
+        if (count($cabPendingIds) > 0) {
+            $syncData = collect($cabPendingIds)
+                ->mapWithKeys(fn ($id) => [(int) $id => ['decision' => 'pending']])
+                ->all();
+            $todayMeeting->changeRequests()->syncWithoutDetaching($syncData);
+        }
+
+        // Past completed meeting
+        $pastMeeting = CabMeeting::firstOrCreate(
+            ['meeting_date' => Carbon::today()->subWeek()->setTime(9, 0)],
+            [
+                'status' => CabMeeting::STATUS_COMPLETED,
+                'created_by' => $sarah->id,
+                'completed_by' => $sarah->id,
+                'completed_at' => Carbon::today()->subWeek()->setTime(10, 30),
+                'agenda_notes' => 'Weekly CAB review. All standard changes approved.',
+                'minutes' => 'Reviewed 3 standard changes. All approved with no conditions. Emergency patch for healthcare systems fast-tracked.',
+                'talking_points' => [
+                    ['id' => Str::uuid()->toString(), 'text' => 'Review weekly change summary', 'checked' => true],
+                    ['id' => Str::uuid()->toString(), 'text' => 'Approve standard patches', 'checked' => true],
+                    ['id' => Str::uuid()->toString(), 'text' => 'Discuss upcoming maintenance windows', 'checked' => true],
+                ],
+            ]
+        );
+
+        // Invite all CAB members to meetings
+        $cabMemberUsers = User::role('CAB Member')->get();
+        $cabMemberIds = $cabMemberUsers->pluck('id');
+        foreach ([$todayMeeting, $pastMeeting] as $meeting) {
+            $meeting->invitedMembers()->syncWithoutDetaching($cabMemberIds);
+        }
+
+        // ── Default CAB Settings ───────────────────────────────────────────
+
+        $cabDefaults = [
+            'cab.quorum' => '3',
+            'cab.emergency_quorum' => '1',
+            'cab.auto_populate_agenda' => '1',
+            'cab.default_meeting_time' => '09:00',
+            'cab.notify_client_on_decision' => '1',
+            'cab.notify_client_on_conditions' => '1',
+            'cab.notify_requester_on_approval' => '1',
+            'cab.notify_requester_on_rejection' => '1',
+            'cab.notify_requester_on_conditions' => '1',
+            'cab.allow_vote_changes' => '1',
+            'cab.require_rejection_comments' => '1',
+            'cab.sla_hours_standard' => '48',
+            'cab.sla_hours_emergency' => '4',
+        ];
+
+        foreach ($cabDefaults as $key => $value) {
+            AppSetting::set($key, $value);
+        }
+
         $this->command->info('');
         $this->command->info('Demo data seeded successfully!');
         $this->command->info('');
@@ -527,6 +621,8 @@ class DemoDataSeeder extends Seeder
         $this->command->info('  Engineer       : james.chen@codeblue.com');
         $this->command->info('  Engineer       : amy.walsh@codeblue.com');
         $this->command->info('  CAB Member     : rob.patel@codeblue.com');
+        $this->command->info('  CAB Member     : david.kim@codeblue.com');
+        $this->command->info('  CAB Member     : nina.reeves@codeblue.com');
         $this->command->info('  MSP Admin      : lisa.park@codeblue.com');
         $this->command->info('');
         $this->command->info('Clients: Apex Manufacturing, Sunrise Healthcare, Velocity Logistics,');

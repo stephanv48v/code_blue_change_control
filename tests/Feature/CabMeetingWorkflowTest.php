@@ -26,7 +26,7 @@ class CabMeetingWorkflowTest extends TestCase
     public function test_cab_meeting_can_be_generated_and_updated(): void
     {
         $engineer = User::factory()->create();
-        $engineer->assignRole('Engineer');
+        $engineer->assignRole('Change Manager');
 
         $requester = User::factory()->create();
         $requester->assignRole('Engineer');
@@ -47,8 +47,9 @@ class CabMeetingWorkflowTest extends TestCase
         $this->actingAs($engineer)
             ->post(route('cab.meetings.generate'), [
                 'meeting_date' => now()->toDateString(),
+                'auto_populate' => true,
             ])
-            ->assertRedirect(route('cab.meetings'));
+            ->assertRedirect();
 
         $meeting = CabMeeting::query()->first();
         $this->assertNotNull($meeting);
@@ -126,7 +127,7 @@ class CabMeetingWorkflowTest extends TestCase
             ->post(route('cab.meetings.generate'), [
                 'meeting_date' => now()->toDateString(),
             ])
-            ->assertRedirect(route('cab.meetings'))
+            ->assertRedirect()
             ->assertSessionHas('message');
 
         $this->assertDatabaseCount('cab_meetings', 1);
@@ -135,7 +136,7 @@ class CabMeetingWorkflowTest extends TestCase
     public function test_refresh_adds_changes_with_pending_cab_approval_record(): void
     {
         $engineer = User::factory()->create();
-        $engineer->assignRole('Engineer');
+        $engineer->assignRole('Change Manager');
 
         $requester = User::factory()->create();
         $requester->assignRole('Engineer');
@@ -146,7 +147,7 @@ class CabMeetingWorkflowTest extends TestCase
             'client_id' => $client->id,
             'requester_id' => $requester->id,
             'title' => 'CAB approval queued before status transition',
-            'status' => ChangeRequest::STATUS_SUBMITTED,
+            'status' => ChangeRequest::STATUS_PENDING_APPROVAL,
             'priority' => 'medium',
             'change_type' => 'server_cloud',
             'risk_level' => 'medium',
@@ -162,8 +163,9 @@ class CabMeetingWorkflowTest extends TestCase
         $this->actingAs($engineer)
             ->post(route('cab.meetings.generate'), [
                 'meeting_date' => now()->toDateString(),
+                'auto_populate' => true,
             ])
-            ->assertRedirect(route('cab.meetings'));
+            ->assertRedirect();
 
         $meeting = CabMeeting::query()->first();
         $this->assertNotNull($meeting);

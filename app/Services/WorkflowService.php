@@ -360,6 +360,7 @@ class WorkflowService
                 'id' => $meeting->id,
                 'status' => $meeting->status,
                 'agenda_items' => $agendaChanges->count(),
+                'talking_points' => $meeting->talking_points ?? [],
             ],
             'pending_reviews' => $agendaChanges,
             'upcoming_changes' => $upcomingChanges,
@@ -454,13 +455,28 @@ class WorkflowService
         ];
     }
 
-    public function getCabMeetings(int $limit = 12): Collection
+    public function getCabMeetings(int $limit = 12, ?User $user = null): Collection
     {
-        return CabMeeting::query()
-            ->with(['creator:id,name', 'completer:id,name', 'changeRequests:id,change_id,title,status,client_id,requester_id'])
+        $query = CabMeeting::query()
+            ->with([
+                'creator:id,name',
+                'completer:id,name',
+                'changeRequests:id,change_id,title,status,priority,client_id,requester_id',
+                'changeRequests.client:id,name',
+                'invitedMembers:id,name,email',
+            ])
+            ->withCount(['invitedMembers', 'changeRequests'])
             ->orderByDesc('meeting_date')
-            ->limit($limit)
-            ->get();
+            ->limit($limit);
+
+        if ($user && !$user->can('changes.approve')) {
+            $query->where(function ($q) use ($user) {
+                $q->where('created_by', $user->id)
+                  ->orWhereHas('invitedMembers', fn ($sub) => $sub->where('user_id', $user->id));
+            });
+        }
+
+        return $query->get();
     }
 
     public function updateCabMeeting(CabMeeting $meeting, array $payload, ?User $user = null): CabMeeting
@@ -469,6 +485,7 @@ class WorkflowService
             'status' => $payload['status'] ?? $meeting->status,
             'agenda_notes' => $payload['agenda_notes'] ?? $meeting->agenda_notes,
             'minutes' => $payload['minutes'] ?? $meeting->minutes,
+            'talking_points' => array_key_exists('talking_points', $payload) ? $payload['talking_points'] : $meeting->talking_points,
         ];
 
         if (($updates['status'] ?? null) === CabMeeting::STATUS_COMPLETED) {

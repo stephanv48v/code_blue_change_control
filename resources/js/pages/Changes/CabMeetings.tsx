@@ -37,8 +37,7 @@ export default function CabMeetings({ meetings }: Props) {
         meeting_date: localDate(),
     });
     const permissions = auth.user?.permissions ?? [];
-    const canManageMeetings =
-        permissions.includes('changes.edit') || permissions.includes('changes.approve');
+    const canManageMeetings = permissions.includes('changes.approve');
 
     const planned = meetings.filter((meeting) => meeting.status === 'planned').length;
     const completed = meetings.filter((meeting) => meeting.status === 'completed').length;

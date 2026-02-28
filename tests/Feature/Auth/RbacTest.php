@@ -29,7 +29,7 @@ class RbacTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
-            ->component('dashboard')
+            ->component('Dashboard')
         );
     }
 
