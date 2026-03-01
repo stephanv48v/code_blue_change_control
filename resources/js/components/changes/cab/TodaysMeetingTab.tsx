@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link, router, useForm } from '@inertiajs/react';
 import {
     ArrowRight,
@@ -14,6 +13,10 @@ import {
     Search,
     ShieldOff,
 } from 'lucide-react';
+import { useState } from 'react';
+import { TalkingPointsSection, type TalkingPoint } from '@/components/changes/cab/TalkingPointsSection';
+import { CabVotePanel } from '@/components/changes/CabVotePanel';
+import { CollapsibleSection } from '@/components/changes/CollapsibleSection';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -29,9 +32,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CollapsibleSection } from '@/components/changes/CollapsibleSection';
-import { CabVotePanel } from '@/components/changes/CabVotePanel';
-import { TalkingPointsSection, type TalkingPoint } from '@/components/changes/cab/TalkingPointsSection';
 import type { CabVoteSummary, UserCabVote } from '@/types';
 
 interface ChangeRequest {
@@ -134,8 +134,6 @@ export function TodaysMeetingTab({
         );
     });
 
-    const filteredIds = new Set(filteredAvailable.map((c) => c.id));
-    const selectedInView = [...selectedIds].filter((id) => filteredIds.has(id));
     const allFilteredSelected = filteredAvailable.length > 0 && filteredAvailable.every((c) => selectedIds.has(c.id));
 
     const toggleSelect = (id: number) => {

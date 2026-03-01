@@ -76,7 +76,7 @@ export default function FormBuilderIndex({ schemas }: Props) {
                         schemaList.map((schema) => {
                             const fieldCount = schema.schema?.length || 0;
                             const requiredCount = (schema.schema ?? []).filter(
-                                (f: any) => f.required,
+                                (f: { required?: boolean }) => f.required,
                             ).length;
 
                             return (

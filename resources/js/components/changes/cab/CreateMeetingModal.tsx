@@ -1,6 +1,8 @@
-import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { CalendarPlus, Search, Plus, Trash2, Users, FileText } from 'lucide-react';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -9,10 +11,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 
 interface ChangeRequest {
     id: number;
@@ -34,7 +34,6 @@ interface CreateMeetingModalProps {
     onOpenChange: (open: boolean) => void;
     availableChanges: ChangeRequest[];
     cabMembers: CabMember[];
-    defaultMeetingTime?: string;
 }
 
 function localDate(): string {
@@ -54,7 +53,6 @@ export function CreateMeetingModal({
     onOpenChange,
     availableChanges,
     cabMembers,
-    defaultMeetingTime,
 }: CreateMeetingModalProps) {
     const [meetingDate, setMeetingDate] = useState(localDate());
     const [selectedChangeIds, setSelectedChangeIds] = useState<Set<number>>(new Set());
@@ -166,7 +164,7 @@ export function CreateMeetingModal({
             change_request_ids: [...selectedChangeIds],
             invited_member_ids: [...selectedMemberIds],
             talking_points: talkingPoints,
-        } as any, {
+        } as Record<string, unknown>, {
             onSuccess: () => {
                 onOpenChange(false);
                 // Reset state

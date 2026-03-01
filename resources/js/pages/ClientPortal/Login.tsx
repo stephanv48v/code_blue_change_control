@@ -16,7 +16,7 @@ type Props = {
 
 export default function ClientPortalLogin({ errors }: Props) {
     const { flash } = usePage().props;
-    const { data, setData, post, processing, recentlySuccessful } = useForm({
+    const { data, setData, post, processing } = useForm({
         email: '',
     });
 

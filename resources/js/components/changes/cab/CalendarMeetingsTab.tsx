@@ -1,13 +1,11 @@
-import { Link, useForm, usePage } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
 import { CalendarDays, PlusCircle } from 'lucide-react';
+import { EventCalendar, type CalendarEvent } from '@/components/changes/event-calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { EventCalendar, type CalendarEvent } from '@/components/changes/event-calendar';
-import type { SharedData } from '@/types';
-
 type MeetingChange = {
     id: number;
     change_id: string;

@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Building2, Edit, Mail, MapPin, Phone, Plus, Trash2, User, UserPlus } from 'lucide-react';
+import { ArrowLeft, Building2, Edit, Mail, MapPin, Phone, Plus, Trash2, UserPlus } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

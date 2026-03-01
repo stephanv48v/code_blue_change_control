@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -61,7 +61,6 @@ export function EventCalendar({
     }, [events]);
 
     const [visibleMonth, setVisibleMonth] = useState<Date>(() => startOfMonth(new Date()));
-    const [selectedDate, setSelectedDate] = useState<string>(() => toDateKey(new Date()) || '');
 
     const monthDays = useMemo(() => buildMonthDays(visibleMonth), [visibleMonth]);
     const visibleMonthPrefix = `${visibleMonth.getFullYear()}-${pad(visibleMonth.getMonth() + 1)}`;
@@ -78,23 +77,25 @@ export function EventCalendar({
         return count;
     }, [eventsByDate, visibleMonthPrefix]);
 
-    useEffect(() => {
+    const defaultDate = useMemo(() => {
         const firstDayInMonth = monthDays.find((day) => day !== null);
-
-        if (!firstDayInMonth) {
-            return;
-        }
+        if (!firstDayInMonth) return '';
 
         const firstEventDay = monthDays.find((day) => {
-            if (!day) {
-                return false;
-            }
-
+            if (!day) return false;
             return (eventsByDate.get(toDateKey(day) ?? '')?.length ?? 0) > 0;
         });
 
-        setSelectedDate(toDateKey(firstEventDay ?? firstDayInMonth) ?? '');
+        return toDateKey(firstEventDay ?? firstDayInMonth) ?? '';
     }, [eventsByDate, monthDays]);
+
+    // Track user click overrides scoped to the current month; resets when month changes
+    const [userSelection, setUserSelection] = useState<{ month: string; date: string } | null>(null);
+    const selectedDate = userSelection?.month === visibleMonthPrefix ? userSelection.date : defaultDate;
+
+    const setSelectedDate = (date: string) => {
+        setUserSelection({ month: visibleMonthPrefix, date });
+    };
 
     const selectedEvents = selectedDate ? eventsByDate.get(selectedDate) ?? [] : [];
 

@@ -10,10 +10,6 @@ import {
     Users,
     XCircle,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { CollapsibleSection } from '@/components/changes/CollapsibleSection';
 import { CommunicationsPanel } from '@/components/changes/CommunicationsPanel';
 import { NextActionBanner } from '@/components/changes/NextActionBanner';
@@ -21,6 +17,10 @@ import { PirPanel } from '@/components/changes/PirPanel';
 import { RunbookPanel } from '@/components/changes/RunbookPanel';
 import { WorkflowEventStream } from '@/components/changes/WorkflowEventStream';
 import { WorkflowStepper } from '@/components/changes/WorkflowStepper';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import type {

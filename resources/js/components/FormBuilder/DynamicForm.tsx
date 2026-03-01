@@ -28,9 +28,9 @@ export type DynamicFormContext = {
 
 type Props = {
     fields: FormField[];
-    values?: Record<string, any>;
+    values?: Record<string, unknown>;
     errors?: Record<string, string>;
-    onChange: (name: string, value: any) => void;
+    onChange: (name: string, value: unknown) => void;
     disabled?: boolean;
     context?: DynamicFormContext;
 };
@@ -88,11 +88,11 @@ function FormFieldInput({
     context,
 }: {
     field: FormField;
-    value: any;
+    value: unknown;
     error?: string;
-    onChange: (value: any) => void;
-    onFieldChange: (name: string, value: any) => void;
-    values: Record<string, any>;
+    onChange: (value: unknown) => void;
+    onFieldChange: (name: string, value: unknown) => void;
+    values: Record<string, unknown>;
     errors: Record<string, string>;
     disabled?: boolean;
     context?: DynamicFormContext;
@@ -433,7 +433,7 @@ function getApproversForClient(
 
 function getSelectedApproverId(
     currentValue: unknown,
-    values: Record<string, any>,
+    values: Record<string, unknown>,
     availableApprovers: ClientApproverOption[],
 ): string | null {
     const fromStoredId = values.client_approver_contact_id;

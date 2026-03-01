@@ -13,8 +13,8 @@ export type ChangeRequest = {
     risk_score: number | null;
     form_schema_id: number | null;
     requires_cab_approval: boolean;
-    policy_decision: Record<string, any> | null;
-    form_data: Record<string, any> | null;
+    policy_decision: Record<string, unknown> | null;
+    form_data: Record<string, unknown> | null;
     requested_date: string | null;
     scheduled_start_date: string | null;
     scheduled_end_date: string | null;
@@ -208,8 +208,8 @@ export type AuditEvent = {
     event: string;
     user_id: number | null;
     client_contact_id: number | null;
-    old_values: Record<string, any> | null;
-    new_values: Record<string, any> | null;
+    old_values: Record<string, unknown> | null;
+    new_values: Record<string, unknown> | null;
     ip_address: string | null;
     user_agent: string | null;
     comment: string | null;

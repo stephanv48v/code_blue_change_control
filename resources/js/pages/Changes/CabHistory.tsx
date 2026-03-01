@@ -9,6 +9,7 @@ import {
     ShieldAlert,
     XCircle,
 } from 'lucide-react';
+import type { ElementType } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +17,6 @@ import { EmptyState } from '@/components/ui/empty-state';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
-import type { ElementType } from 'react';
 
 type Vote = {
     user: string;

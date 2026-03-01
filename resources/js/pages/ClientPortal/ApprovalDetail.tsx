@@ -1,9 +1,9 @@
 import { Head, useForm, Link } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle, XCircle, Calendar, User, Building2, FileText } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, User, Building2, FileText } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
