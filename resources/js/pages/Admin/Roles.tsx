@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, Pencil, Plus, Shield, Trash2 } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Pencil, Plus, Shield, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,234 @@ interface Props {
     roles: Role[];
     permissions: Permission[];
 }
+
+// ---------------------------------------------------------------------------
+// Permission grouping & labels
+// ---------------------------------------------------------------------------
+
+const PERMISSION_GROUPS: { label: string; permissions: { name: string; label: string }[] }[] = [
+    {
+        label: 'Dashboard',
+        permissions: [{ name: 'dashboard.view', label: 'View Dashboard' }],
+    },
+    {
+        label: 'User Management',
+        permissions: [
+            { name: 'users.manage', label: 'Full User Management' },
+            { name: 'users.view', label: 'View Users' },
+            { name: 'users.create', label: 'Create Users' },
+            { name: 'users.edit', label: 'Edit Users' },
+            { name: 'users.delete', label: 'Delete Users' },
+        ],
+    },
+    {
+        label: 'Change Requests',
+        permissions: [
+            { name: 'changes.view', label: 'View Changes' },
+            { name: 'changes.create', label: 'Create Changes' },
+            { name: 'changes.edit', label: 'Edit Changes' },
+            { name: 'changes.delete', label: 'Delete Changes' },
+            { name: 'changes.approve', label: 'Approve / Reject Changes' },
+        ],
+    },
+    {
+        label: 'Forms & Templates',
+        permissions: [{ name: 'forms.manage', label: 'Manage Form Schemas' }],
+    },
+    {
+        label: 'Approvals',
+        permissions: [{ name: 'approvals.manage', label: 'Manage Approvals' }],
+    },
+    {
+        label: 'Integrations',
+        permissions: [
+            { name: 'integrations.view', label: 'View Integrations' },
+            { name: 'integrations.manage', label: 'Manage Integrations' },
+        ],
+    },
+    {
+        label: 'Governance',
+        permissions: [{ name: 'policies.manage', label: 'Manage Policies & Blackouts' }],
+    },
+    {
+        label: 'Settings',
+        permissions: [{ name: 'settings.manage', label: 'Manage Settings' }],
+    },
+    {
+        label: 'Audit',
+        permissions: [{ name: 'audit.view', label: 'View Audit Logs' }],
+    },
+];
+
+/** Return a human-readable label for a permission name */
+function permissionLabel(name: string): string {
+    for (const group of PERMISSION_GROUPS) {
+        for (const p of group.permissions) {
+            if (p.name === name) return p.label;
+        }
+    }
+    return name;
+}
+
+/** Return the group label for a permission name */
+function permissionGroup(name: string): string {
+    for (const group of PERMISSION_GROUPS) {
+        for (const p of group.permissions) {
+            if (p.name === name) return group.label;
+        }
+    }
+    return 'Other';
+}
+
+// Badge color per group (kept subtle)
+const GROUP_COLORS: Record<string, string> = {
+    'Dashboard': 'bg-slate-100 text-slate-700',
+    'User Management': 'bg-blue-50 text-blue-700',
+    'Change Requests': 'bg-amber-50 text-amber-700',
+    'Forms & Templates': 'bg-violet-50 text-violet-700',
+    'Approvals': 'bg-green-50 text-green-700',
+    'Integrations': 'bg-cyan-50 text-cyan-700',
+    'Governance': 'bg-rose-50 text-rose-700',
+    'Settings': 'bg-orange-50 text-orange-700',
+    'Audit': 'bg-gray-100 text-gray-700',
+};
+
+// ---------------------------------------------------------------------------
+// Grouped permission picker (reused in create + edit dialogs)
+// ---------------------------------------------------------------------------
+
+function GroupedPermissionPicker({
+    dbPermissions,
+    selected,
+    onToggle,
+    onSet,
+}: {
+    dbPermissions: Permission[];
+    selected: string[];
+    onToggle: (name: string) => void;
+    onSet: (next: string[]) => void;
+}) {
+    const dbNames = new Set(dbPermissions.map((p) => p.name));
+
+    // Track which groups are expanded — default all collapsed
+    const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+    const toggleExpanded = (label: string) =>
+        setExpanded((prev) => ({ ...prev, [label]: !prev[label] }));
+
+    const toggleGroup = (groupPerms: { name: string }[]) => {
+        const names = groupPerms.filter((p) => dbNames.has(p.name)).map((p) => p.name);
+        const allSelected = names.every((n) => selected.includes(n));
+        if (allSelected) {
+            // remove all group perms
+            onSet(selected.filter((s) => !names.includes(s)));
+        } else {
+            // add missing group perms
+            const combined = new Set([...selected, ...names]);
+            onSet([...combined]);
+        }
+    };
+
+    return (
+        <div className="max-h-80 space-y-1 overflow-y-auto rounded-lg border p-2">
+            {PERMISSION_GROUPS.map((group) => {
+                const availablePerms = group.permissions.filter((p) => dbNames.has(p.name));
+                if (availablePerms.length === 0) return null;
+
+                const allSelected = availablePerms.every((p) => selected.includes(p.name));
+                const someSelected = availablePerms.some((p) => selected.includes(p.name));
+                const isOpen = expanded[group.label] ?? false;
+                const selectedCount = availablePerms.filter((p) => selected.includes(p.name)).length;
+
+                return (
+                    <div key={group.label} className="rounded-md border">
+                        <div className="flex items-center gap-2 px-3 py-2">
+                            <Checkbox
+                                checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                                onCheckedChange={() => toggleGroup(availablePerms)}
+                            />
+                            <button
+                                type="button"
+                                className="flex flex-1 cursor-pointer items-center justify-between"
+                                onClick={() => toggleExpanded(group.label)}
+                            >
+                                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                    {group.label}
+                                    <span className="ml-1.5 font-normal normal-case tracking-normal">
+                                        ({selectedCount}/{availablePerms.length})
+                                    </span>
+                                </span>
+                                <ChevronDown
+                                    className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`}
+                                />
+                            </button>
+                        </div>
+                        {isOpen && (
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 border-t bg-muted/30 px-3 py-2 pl-9">
+                                {availablePerms.map((perm) => (
+                                    <label
+                                        key={perm.name}
+                                        className="flex cursor-pointer items-center gap-2"
+                                    >
+                                        <Checkbox
+                                            checked={selected.includes(perm.name)}
+                                            onCheckedChange={() => onToggle(perm.name)}
+                                        />
+                                        <span className="text-sm">{perm.label}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+
+            {/* Show any DB permissions that aren't in our group map (future-proofing) */}
+            {(() => {
+                const mapped = new Set(PERMISSION_GROUPS.flatMap((g) => g.permissions.map((p) => p.name)));
+                const unmapped = dbPermissions.filter((p) => !mapped.has(p.name));
+                if (unmapped.length === 0) return null;
+                const isOpen = expanded['Other'] ?? false;
+                return (
+                    <div className="rounded-md border">
+                        <button
+                            type="button"
+                            className="flex w-full cursor-pointer items-center justify-between px-3 py-2"
+                            onClick={() => toggleExpanded('Other')}
+                        >
+                            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Other
+                            </span>
+                            <ChevronDown
+                                className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`}
+                            />
+                        </button>
+                        {isOpen && (
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 border-t bg-muted/30 px-3 py-2 pl-9">
+                                {unmapped.map((perm) => (
+                                    <label
+                                        key={perm.name}
+                                        className="flex cursor-pointer items-center gap-2"
+                                    >
+                                        <Checkbox
+                                            checked={selected.includes(perm.name)}
+                                            onCheckedChange={() => onToggle(perm.name)}
+                                        />
+                                        <span className="text-sm">{perm.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
+            })()}
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 export default function AdminRoles({ roles, permissions }: Props) {
     const [editingRole, setEditingRole] = useState<Role | null>(null);
@@ -123,27 +351,18 @@ export default function AdminRoles({ roles, permissions }: Props) {
                                         )}
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Permissions</Label>
-                                        <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto border rounded-lg p-4">
-                                            {permissions.map((permission) => (
-                                                <div
-                                                    key={permission.id}
-                                                    className="flex items-center gap-2"
-                                                >
-                                                    <Checkbox
-                                                        checked={createForm.data.permissions.includes(
-                                                            permission.name,
-                                                        )}
-                                                        onCheckedChange={() =>
-                                                            toggleCreatePermission(permission.name)
-                                                        }
-                                                    />
-                                                    <span className="text-sm">
-                                                        {permission.name}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        <Label>
+                                            Permissions{' '}
+                                            <span className="font-normal text-muted-foreground">
+                                                ({createForm.data.permissions.length} selected)
+                                            </span>
+                                        </Label>
+                                        <GroupedPermissionPicker
+                                            dbPermissions={permissions}
+                                            selected={createForm.data.permissions}
+                                            onToggle={toggleCreatePermission}
+                                            onSet={(next) => createForm.setData('permissions', next)}
+                                        />
                                         {createForm.errors.permissions && (
                                             <p className="text-sm text-red-500">
                                                 {createForm.errors.permissions}
@@ -206,14 +425,13 @@ export default function AdminRoles({ roles, permissions }: Props) {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-1.5">
                                     {role.permissions.map((permission) => (
                                         <Badge
                                             key={permission.id}
-                                            variant="secondary"
-                                            className="text-xs"
+                                            className={`text-xs border-0 ${GROUP_COLORS[permissionGroup(permission.name)] ?? 'bg-gray-100 text-gray-700'}`}
                                         >
-                                            {permission.name}
+                                            {permissionLabel(permission.name)}
                                         </Badge>
                                     ))}
                                 </div>
@@ -250,7 +468,9 @@ export default function AdminRoles({ roles, permissions }: Props) {
     );
 }
 
-// --- Edit Role Dialog ---
+// ---------------------------------------------------------------------------
+// Edit Role Dialog
+// ---------------------------------------------------------------------------
 
 function EditRoleDialog({
     role,
@@ -307,21 +527,16 @@ function EditRoleDialog({
                     <div className="space-y-2">
                         <Label>
                             Permissions{' '}
-                            <span className="text-muted-foreground font-normal">
+                            <span className="font-normal text-muted-foreground">
                                 ({data.permissions.length} selected)
                             </span>
                         </Label>
-                        <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto border rounded-lg p-4">
-                            {permissions.map((permission) => (
-                                <div key={permission.id} className="flex items-center gap-2">
-                                    <Checkbox
-                                        checked={data.permissions.includes(permission.name)}
-                                        onCheckedChange={() => togglePermission(permission.name)}
-                                    />
-                                    <span className="text-sm">{permission.name}</span>
-                                </div>
-                            ))}
-                        </div>
+                        <GroupedPermissionPicker
+                            dbPermissions={permissions}
+                            selected={data.permissions}
+                            onToggle={togglePermission}
+                            onSet={(next) => setData('permissions', next)}
+                        />
                         {errors.permissions && (
                             <p className="text-sm text-red-500">{errors.permissions}</p>
                         )}

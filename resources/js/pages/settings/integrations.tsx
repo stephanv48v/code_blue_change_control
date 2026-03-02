@@ -1,12 +1,13 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { Check, CheckCircle2, Copy, ExternalLink, Plus, RefreshCw, Settings2, Shield, Trash2 } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown, Copy, ExternalLink, Plus, RefreshCw, Settings2, Shield, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -113,132 +114,139 @@ function ProviderCard({ provider, label, connections, onSync }: ProviderCardProp
     const count = connections.length;
 
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-start justify-between gap-3 pb-3">
-                <div>
-                    <CardTitle className="text-base">{label}</CardTitle>
-                    <CardDescription>{guide.summary}</CardDescription>
-                </div>
-                <Badge variant={count > 0 ? 'default' : 'secondary'}>
-                    {count} {count === 1 ? 'connection' : 'connections'}
-                </Badge>
-            </CardHeader>
+        <Collapsible defaultOpen={false}>
+            <Card>
+                <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between gap-3 p-6 pb-4 text-left">
+                    <div className="min-w-0">
+                        <CardTitle className="text-base">{label}</CardTitle>
+                        <CardDescription className="mt-1">{guide.summary}</CardDescription>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                        <Badge variant={count > 0 ? 'default' : 'secondary'}>
+                            {count} {count === 1 ? 'connection' : 'connections'}
+                        </Badge>
+                        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                    </div>
+                </CollapsibleTrigger>
 
-            <CardContent className="space-y-5">
-                {/* Required credentials */}
-                <div className="space-y-2">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Required credentials
-                    </p>
-                    <ul className="space-y-1">
-                        {guide.requiredCredentials.map((cred) => (
-                            <li key={cred} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/50" />
-                                <code className="text-xs">{cred}</code>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-
-                {/* Setup steps */}
-                <div className="space-y-2">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Setup steps
-                    </p>
-                    <ol className="space-y-2">
-                        {guide.setupSteps.map((step, i) => (
-                            <li key={i} className="flex gap-3 text-sm">
-                                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                                    {i + 1}
-                                </span>
-                                <span className="leading-snug text-muted-foreground">{step}</span>
-                            </li>
-                        ))}
-                    </ol>
-                </div>
-
-                {/* Webhook info */}
-                <div className="space-y-1">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Webhook endpoint
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                        Point outbound webhooks to{' '}
-                        <code className="rounded bg-muted px-1 text-xs">
-                            /webhooks/integrations/&#123;integration_id&#125;
-                        </code>{' '}
-                        and send your secret as{' '}
-                        <code className="rounded bg-muted px-1 text-xs">X-Integration-Token</code>.
-                    </p>
-                </div>
-
-                {/* Existing connections for this provider */}
-                {connections.length > 0 && (
-                    <>
-                        <Separator />
+                <CollapsibleContent>
+                    <div className="space-y-5 px-6 pb-6 pt-2">
+                        {/* Required credentials */}
                         <div className="space-y-2">
                             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                Connected
+                                Required credentials
                             </p>
-                            {connections.map((c) => (
-                                <div
-                                    key={c.id}
-                                    className="flex flex-wrap items-center justify-between gap-3 rounded border p-3"
-                                >
-                                    <div>
-                                        <p className="text-sm font-medium">{c.name}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {c.client?.name ?? 'Global'} &mdash; last sync:{' '}
-                                            {c.last_synced_at
-                                                ? new Date(c.last_synced_at).toLocaleString()
-                                                : 'Never'}
-                                        </p>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <Badge variant={c.is_active ? 'default' : 'secondary'}>
-                                            {c.is_active ? 'Active' : 'Disabled'}
-                                        </Badge>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => onSync(c.id)}
-                                            disabled={!c.is_active}
-                                        >
-                                            <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                                            Sync now
-                                        </Button>
-                                        <Link href={`/integrations/${c.id}/edit`}>
-                                            <Button type="button" variant="secondary" size="sm">
-                                                <Settings2 className="mr-1.5 h-3.5 w-3.5" />
-                                                Configure
-                                            </Button>
-                                        </Link>
-                                    </div>
-                                </div>
-                            ))}
+                            <ul className="space-y-1">
+                                {guide.requiredCredentials.map((cred) => (
+                                    <li key={cred} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/50" />
+                                        <code className="text-xs">{cred}</code>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
-                    </>
-                )}
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 pt-1">
-                    <Link href={`/integrations/create?provider=${provider}`}>
-                        <Button size="sm">
-                            <Plus className="mr-1.5 h-3.5 w-3.5" />
-                            Add {label} connection
-                        </Button>
-                    </Link>
-                    {connections.length > 0 && (
-                        <Link href="/integrations">
-                            <Button size="sm" variant="outline">
-                                Open manager
-                            </Button>
-                        </Link>
-                    )}
-                </div>
-            </CardContent>
-        </Card>
+                        {/* Setup steps */}
+                        <div className="space-y-2">
+                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                Setup steps
+                            </p>
+                            <ol className="space-y-2">
+                                {guide.setupSteps.map((step, i) => (
+                                    <li key={i} className="flex gap-3 text-sm">
+                                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                                            {i + 1}
+                                        </span>
+                                        <span className="leading-snug text-muted-foreground">{step}</span>
+                                    </li>
+                                ))}
+                            </ol>
+                        </div>
+
+                        {/* Webhook info */}
+                        <div className="space-y-1">
+                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                Webhook endpoint
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                                Point outbound webhooks to{' '}
+                                <code className="rounded bg-muted px-1 text-xs">
+                                    /webhooks/integrations/&#123;integration_id&#125;
+                                </code>{' '}
+                                and send your secret as{' '}
+                                <code className="rounded bg-muted px-1 text-xs">X-Integration-Token</code>.
+                            </p>
+                        </div>
+
+                        {/* Existing connections for this provider */}
+                        {connections.length > 0 && (
+                            <>
+                                <Separator />
+                                <div className="space-y-2">
+                                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                        Connected
+                                    </p>
+                                    {connections.map((c) => (
+                                        <div
+                                            key={c.id}
+                                            className="flex flex-wrap items-center justify-between gap-3 rounded border p-3"
+                                        >
+                                            <div>
+                                                <p className="text-sm font-medium">{c.name}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {c.client?.name ?? 'Global'} &mdash; last sync:{' '}
+                                                    {c.last_synced_at
+                                                        ? new Date(c.last_synced_at).toLocaleString()
+                                                        : 'Never'}
+                                                </p>
+                                            </div>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <Badge variant={c.is_active ? 'default' : 'secondary'}>
+                                                    {c.is_active ? 'Active' : 'Disabled'}
+                                                </Badge>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => onSync(c.id)}
+                                                    disabled={!c.is_active}
+                                                >
+                                                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                                                    Sync now
+                                                </Button>
+                                                <Link href={`/integrations/${c.id}/edit`}>
+                                                    <Button type="button" variant="secondary" size="sm">
+                                                        <Settings2 className="mr-1.5 h-3.5 w-3.5" />
+                                                        Configure
+                                                    </Button>
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 pt-1">
+                            <Link href={`/integrations/create?provider=${provider}`}>
+                                <Button size="sm">
+                                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                                    Add {label} connection
+                                </Button>
+                            </Link>
+                            {connections.length > 0 && (
+                                <Link href="/integrations">
+                                    <Button size="sm" variant="outline">
+                                        Open manager
+                                    </Button>
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+                </CollapsibleContent>
+            </Card>
+        </Collapsible>
     );
 }
 
@@ -276,163 +284,170 @@ function MicrosoftSsoCard({ sso }: { sso: MicrosoftSsoStatus }) {
                 description="Single sign-on for staff using your organisation's Microsoft 365 accounts."
             />
 
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between gap-3 pb-3">
-                    <div>
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <svg className="h-4 w-4" viewBox="0 0 21 21" aria-hidden="true">
-                                <rect x="1" y="1" width="9" height="9" fill="#f25022" />
-                                <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
-                                <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
-                                <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
-                            </svg>
-                            Microsoft Sign-In
-                        </CardTitle>
-                        <CardDescription>Azure AD / Microsoft Entra ID app registration</CardDescription>
-                    </div>
-                    <Badge variant={sso.configured ? 'default' : 'secondary'}>
-                        {sso.configured ? 'Configured' : 'Not configured'}
-                    </Badge>
-                </CardHeader>
-
-                <CardContent className="space-y-5">
-                    {flash.message && (
-                        <Alert>
-                            <CheckCircle2 className="h-4 w-4" />
-                            <AlertDescription>{flash.message}</AlertDescription>
-                        </Alert>
-                    )}
-
-                    <form onSubmit={handleSave} className="space-y-4">
-                        <div className="grid gap-4">
-                            <div className="grid gap-1.5">
-                                <Label htmlFor="ms-client-id">Application (Client) ID</Label>
-                                <Input
-                                    id="ms-client-id"
-                                    value={form.data.client_id}
-                                    onChange={(e) => form.setData('client_id', e.target.value)}
-                                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                                    autoComplete="off"
-                                />
-                                <InputError message={form.errors.client_id} />
-                            </div>
-
-                            <div className="grid gap-1.5">
-                                <Label htmlFor="ms-tenant-id">Directory (Tenant) ID</Label>
-                                <Input
-                                    id="ms-tenant-id"
-                                    value={form.data.tenant_id}
-                                    onChange={(e) => form.setData('tenant_id', e.target.value)}
-                                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                                    autoComplete="off"
-                                />
-                                <InputError message={form.errors.tenant_id} />
-                            </div>
-
-                            <div className="grid gap-1.5">
-                                <Label htmlFor="ms-client-secret">Client Secret</Label>
-                                <Input
-                                    id="ms-client-secret"
-                                    type="password"
-                                    value={form.data.client_secret}
-                                    onChange={(e) => form.setData('client_secret', e.target.value)}
-                                    placeholder={
-                                        sso.clientSecret
-                                            ? '••••••••  (leave blank to keep existing)'
-                                            : 'Paste your client secret value'
-                                    }
-                                    autoComplete="new-password"
-                                />
-                                <InputError message={form.errors.client_secret} />
-                            </div>
+            <Collapsible defaultOpen={false}>
+                <Card>
+                    <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between gap-3 p-6 pb-4 text-left">
+                        <div className="min-w-0">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <svg className="h-4 w-4" viewBox="0 0 21 21" aria-hidden="true">
+                                    <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+                                    <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+                                    <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+                                    <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+                                </svg>
+                                Microsoft Sign-In
+                            </CardTitle>
+                            <CardDescription className="mt-1">Azure AD / Microsoft Entra ID app registration</CardDescription>
                         </div>
-
-                        <Button type="submit" disabled={form.processing} size="sm">
-                            Save credentials
-                        </Button>
-                    </form>
-
-                    <Separator />
-
-                    <div className="space-y-2">
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                            Callback URL — register this in your Azure app
-                        </p>
-                        <div className="flex items-center gap-2 rounded border bg-muted/40 px-3 py-2">
-                            <code className="flex-1 break-all text-xs">{sso.callbackUrl}</code>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 shrink-0 px-2"
-                                onClick={copyCallback}
-                            >
-                                {copied ? (
-                                    <Check className="h-3.5 w-3.5 text-green-600" />
-                                ) : (
-                                    <Copy className="h-3.5 w-3.5" />
-                                )}
-                            </Button>
+                        <div className="flex shrink-0 items-center gap-2">
+                            <Badge variant={sso.configured ? 'default' : 'secondary'}>
+                                {sso.configured ? 'Configured' : 'Not configured'}
+                            </Badge>
+                            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
                         </div>
-                    </div>
+                    </CollapsibleTrigger>
 
-                    <div className="space-y-2">
-                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                            Setup steps
-                        </p>
-                        <ol className="space-y-2">
-                            {[
-                                { text: 'Sign in to ', link: { label: 'portal.azure.com', href: 'https://portal.azure.com' }, after: ' and go to Azure Active Directory → App registrations → New registration.' },
-                                { text: 'Give the app a name, leave the default account type, then under Redirect URI choose Web and paste the Callback URL above.' },
-                                { text: 'Copy the Application (client) ID and Directory (tenant) ID from the overview page into the fields above.' },
-                                { text: 'Go to Certificates & secrets → New client secret, set an expiry, then paste the Value (not the ID) into the Client Secret field above.' },
-                                { text: 'Under API permissions, confirm Microsoft Graph → User.Read is present (it is by default). Grant admin consent if required.' },
-                                { text: 'Click Save credentials. New staff who sign in via Microsoft will be auto-created with the Engineer role unless their email is in ADMIN_EMAILS.' },
-                            ].map((step, i) => (
-                                <li key={i} className="flex gap-3 text-sm">
-                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                                        {i + 1}
-                                    </span>
-                                    <span className="leading-snug text-muted-foreground">
-                                        {step.text}
-                                        {step.link && (
-                                            <a
-                                                href={step.link.href}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-foreground underline hover:text-primary"
-                                            >
-                                                {step.link.label}
-                                            </a>
-                                        )}
-                                        {step.after}
-                                    </span>
-                                </li>
-                            ))}
-                        </ol>
-                    </div>
+                    <CollapsibleContent>
+                        <div className="space-y-5 px-6 pb-6 pt-2">
+                            {flash.message && (
+                                <Alert>
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    <AlertDescription>{flash.message}</AlertDescription>
+                                </Alert>
+                            )}
 
-                    <div className="flex items-center gap-2">
-                        <a
-                            href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            <Button variant="outline" size="sm">
-                                <ExternalLink className="mr-2 h-3.5 w-3.5" />
-                                Open Azure App Registrations
-                            </Button>
-                        </a>
-                        {sso.configured && (
-                            <a href="/auth/microsoft" target="_blank" rel="noopener noreferrer">
-                                <Button variant="outline" size="sm">
-                                    Test Sign-In
+                            <form onSubmit={handleSave} className="space-y-4">
+                                <div className="grid gap-4">
+                                    <div className="grid gap-1.5">
+                                        <Label htmlFor="ms-client-id">Application (Client) ID</Label>
+                                        <Input
+                                            id="ms-client-id"
+                                            value={form.data.client_id}
+                                            onChange={(e) => form.setData('client_id', e.target.value)}
+                                            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                                            autoComplete="off"
+                                        />
+                                        <InputError message={form.errors.client_id} />
+                                    </div>
+
+                                    <div className="grid gap-1.5">
+                                        <Label htmlFor="ms-tenant-id">Directory (Tenant) ID</Label>
+                                        <Input
+                                            id="ms-tenant-id"
+                                            value={form.data.tenant_id}
+                                            onChange={(e) => form.setData('tenant_id', e.target.value)}
+                                            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                                            autoComplete="off"
+                                        />
+                                        <InputError message={form.errors.tenant_id} />
+                                    </div>
+
+                                    <div className="grid gap-1.5">
+                                        <Label htmlFor="ms-client-secret">Client Secret</Label>
+                                        <Input
+                                            id="ms-client-secret"
+                                            type="password"
+                                            value={form.data.client_secret}
+                                            onChange={(e) => form.setData('client_secret', e.target.value)}
+                                            placeholder={
+                                                sso.clientSecret
+                                                    ? '••••••••  (leave blank to keep existing)'
+                                                    : 'Paste your client secret value'
+                                            }
+                                            autoComplete="new-password"
+                                        />
+                                        <InputError message={form.errors.client_secret} />
+                                    </div>
+                                </div>
+
+                                <Button type="submit" disabled={form.processing} size="sm">
+                                    Save credentials
                                 </Button>
-                            </a>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
+                            </form>
+
+                            <Separator />
+
+                            <div className="space-y-2">
+                                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                    Callback URL — register this in your Azure app
+                                </p>
+                                <div className="flex items-center gap-2 rounded border bg-muted/40 px-3 py-2">
+                                    <code className="flex-1 break-all text-xs">{sso.callbackUrl}</code>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 shrink-0 px-2"
+                                        onClick={copyCallback}
+                                    >
+                                        {copied ? (
+                                            <Check className="h-3.5 w-3.5 text-green-600" />
+                                        ) : (
+                                            <Copy className="h-3.5 w-3.5" />
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                    Setup steps
+                                </p>
+                                <ol className="space-y-2">
+                                    {[
+                                        { text: 'Sign in to ', link: { label: 'portal.azure.com', href: 'https://portal.azure.com' }, after: ' and go to Azure Active Directory → App registrations → New registration.' },
+                                        { text: 'Give the app a name, leave the default account type, then under Redirect URI choose Web and paste the Callback URL above.' },
+                                        { text: 'Copy the Application (client) ID and Directory (tenant) ID from the overview page into the fields above.' },
+                                        { text: 'Go to Certificates & secrets → New client secret, set an expiry, then paste the Value (not the ID) into the Client Secret field above.' },
+                                        { text: 'Under API permissions, confirm Microsoft Graph → User.Read is present (it is by default). Grant admin consent if required.' },
+                                        { text: 'Click Save credentials. New staff who sign in via Microsoft will be auto-created with the Engineer role unless their email is in ADMIN_EMAILS.' },
+                                    ].map((step, i) => (
+                                        <li key={i} className="flex gap-3 text-sm">
+                                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                                                {i + 1}
+                                            </span>
+                                            <span className="leading-snug text-muted-foreground">
+                                                {step.text}
+                                                {step.link && (
+                                                    <a
+                                                        href={step.link.href}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-foreground underline hover:text-primary"
+                                                    >
+                                                        {step.link.label}
+                                                    </a>
+                                                )}
+                                                {step.after}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ol>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <a
+                                    href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <Button variant="outline" size="sm">
+                                        <ExternalLink className="mr-2 h-3.5 w-3.5" />
+                                        Open Azure App Registrations
+                                    </Button>
+                                </a>
+                                {sso.configured && (
+                                    <a href="/auth/microsoft" target="_blank" rel="noopener noreferrer">
+                                        <Button variant="outline" size="sm">
+                                            Test Sign-In
+                                        </Button>
+                                    </a>
+                                )}
+                            </div>
+                        </div>
+                    </CollapsibleContent>
+                </Card>
+            </Collapsible>
         </div>
     );
 }
@@ -464,122 +479,129 @@ function GroupMappingsCard({ mappings: initialMappings, availableRoles }: { mapp
     };
 
     return (
-        <Card>
-            <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                    <Shield className="h-4 w-4" />
-                    Entra Group → Role Mappings
-                </CardTitle>
-                <CardDescription>
-                    Automatically assign roles to staff based on their Azure AD / Entra ID security group memberships.
-                    Roles are synced on every Microsoft sign-in.
-                </CardDescription>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-                {flash.message && (
-                    <Alert>
-                        <CheckCircle2 className="h-4 w-4" />
-                        <AlertDescription>{flash.message}</AlertDescription>
-                    </Alert>
-                )}
-
-                <Alert>
-                    <AlertDescription className="text-xs">
-                        <strong>Azure permission required:</strong> Your app registration needs{' '}
-                        <code className="rounded bg-muted px-1 text-xs">GroupMember.Read.All</code> (Microsoft Graph,
-                        delegated) with admin consent. Add it under{' '}
-                        <em>API permissions → Add a permission → Microsoft Graph → Delegated → GroupMember.Read.All</em>.
-                    </AlertDescription>
-                </Alert>
-
-                <form onSubmit={handleSave} className="space-y-3">
-                    {rows.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                            No mappings configured. Click "Add mapping" to map an Entra group to a role.
-                        </p>
-                    ) : (
-                        <div className="space-y-2">
-                            <div className="grid grid-cols-[1fr_1fr_160px_36px] gap-2 px-1">
-                                <p className="text-xs font-medium text-muted-foreground">Group Object ID</p>
-                                <p className="text-xs font-medium text-muted-foreground">Display name (optional)</p>
-                                <p className="text-xs font-medium text-muted-foreground">Role</p>
-                                <span />
-                            </div>
-
-                            {rows.map((row, index) => (
-                                <div key={index} className="grid grid-cols-[1fr_1fr_160px_36px] items-center gap-2">
-                                    <Input
-                                        value={row.group_id}
-                                        onChange={(e) => updateRow(index, 'group_id', e.target.value)}
-                                        placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                                        className="font-mono text-xs"
-                                    />
-                                    <Input
-                                        value={row.group_name}
-                                        onChange={(e) => updateRow(index, 'group_name', e.target.value)}
-                                        placeholder="e.g. MSP Engineers"
-                                    />
-                                    <Select
-                                        value={row.role_name}
-                                        onValueChange={(value) => updateRow(index, 'role_name', value)}
-                                    >
-                                        <SelectTrigger className="text-sm">
-                                            <SelectValue placeholder="Select role" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {availableRoles.map((role) => (
-                                                <SelectItem key={role} value={role}>
-                                                    {role}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                        onClick={() => removeRow(index)}
-                                    >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                    </Button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    <div className="flex items-center gap-2 pt-1">
-                        <Button type="button" variant="outline" size="sm" onClick={addRow}>
-                            <Plus className="mr-1.5 h-3.5 w-3.5" />
-                            Add mapping
-                        </Button>
-                        <Button type="submit" size="sm">
-                            Save mappings
-                        </Button>
+        <Collapsible defaultOpen={false}>
+            <Card>
+                <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between gap-3 p-6 pb-4 text-left">
+                    <div className="min-w-0">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Shield className="h-4 w-4" />
+                            Entra Group → Role Mappings
+                        </CardTitle>
+                        <CardDescription className="mt-1">
+                            Automatically assign roles to staff based on their Azure AD / Entra ID security group memberships.
+                            Roles are synced on every Microsoft sign-in.
+                        </CardDescription>
                     </div>
-                </form>
+                    <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                </CollapsibleTrigger>
 
-                <div className="space-y-1 pt-1">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        How to find a group's Object ID
-                    </p>
-                    <ol className="space-y-1">
-                        {[
-                            'In the Azure portal, go to Azure Active Directory → Groups.',
-                            'Click the group you want to map.',
-                            'Copy the Object ID from the Overview page and paste it into the Group Object ID field above.',
-                        ].map((text, i) => (
-                            <li key={i} className="flex gap-3 text-sm">
-                                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                                    {i + 1}
-                                </span>
-                                <span className="leading-snug text-muted-foreground">{text}</span>
-                            </li>
-                        ))}
-                    </ol>
-                </div>
-            </CardContent>
-        </Card>
+                <CollapsibleContent>
+                    <div className="space-y-4 px-6 pb-6 pt-2">
+                        {flash.message && (
+                            <Alert>
+                                <CheckCircle2 className="h-4 w-4" />
+                                <AlertDescription>{flash.message}</AlertDescription>
+                            </Alert>
+                        )}
+
+                        <Alert>
+                            <AlertDescription className="text-xs">
+                                <strong>Azure permission required:</strong> Your app registration needs{' '}
+                                <code className="rounded bg-muted px-1 text-xs">GroupMember.Read.All</code> (Microsoft Graph,
+                                delegated) with admin consent. Add it under{' '}
+                                <em>API permissions → Add a permission → Microsoft Graph → Delegated → GroupMember.Read.All</em>.
+                            </AlertDescription>
+                        </Alert>
+
+                        <form onSubmit={handleSave} className="space-y-3">
+                            {rows.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">
+                                    No mappings configured. Click "Add mapping" to map an Entra group to a role.
+                                </p>
+                            ) : (
+                                <div className="space-y-2">
+                                    <div className="grid grid-cols-[1fr_1fr_160px_36px] gap-2 px-1">
+                                        <p className="text-xs font-medium text-muted-foreground">Group Object ID</p>
+                                        <p className="text-xs font-medium text-muted-foreground">Display name (optional)</p>
+                                        <p className="text-xs font-medium text-muted-foreground">Role</p>
+                                        <span />
+                                    </div>
+
+                                    {rows.map((row, index) => (
+                                        <div key={index} className="grid grid-cols-[1fr_1fr_160px_36px] items-center gap-2">
+                                            <Input
+                                                value={row.group_id}
+                                                onChange={(e) => updateRow(index, 'group_id', e.target.value)}
+                                                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                                                className="font-mono text-xs"
+                                            />
+                                            <Input
+                                                value={row.group_name}
+                                                onChange={(e) => updateRow(index, 'group_name', e.target.value)}
+                                                placeholder="e.g. MSP Engineers"
+                                            />
+                                            <Select
+                                                value={row.role_name}
+                                                onValueChange={(value) => updateRow(index, 'role_name', value)}
+                                            >
+                                                <SelectTrigger className="text-sm">
+                                                    <SelectValue placeholder="Select role" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {availableRoles.map((role) => (
+                                                        <SelectItem key={role} value={role}>
+                                                            {role}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                onClick={() => removeRow(index)}
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="flex items-center gap-2 pt-1">
+                                <Button type="button" variant="outline" size="sm" onClick={addRow}>
+                                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                                    Add mapping
+                                </Button>
+                                <Button type="submit" size="sm">
+                                    Save mappings
+                                </Button>
+                            </div>
+                        </form>
+
+                        <div className="space-y-1 pt-1">
+                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                How to find a group's Object ID
+                            </p>
+                            <ol className="space-y-1">
+                                {[
+                                    'In the Azure portal, go to Azure Active Directory → Groups.',
+                                    'Click the group you want to map.',
+                                    'Copy the Object ID from the Overview page and paste it into the Group Object ID field above.',
+                                ].map((text, i) => (
+                                    <li key={i} className="flex gap-3 text-sm">
+                                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                                            {i + 1}
+                                        </span>
+                                        <span className="leading-snug text-muted-foreground">{text}</span>
+                                    </li>
+                                ))}
+                            </ol>
+                        </div>
+                    </div>
+                </CollapsibleContent>
+            </Card>
+        </Collapsible>
     );
 }
