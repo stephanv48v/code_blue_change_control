@@ -142,7 +142,7 @@ class ApprovalService
     {
         DB::transaction(function () use ($changeRequest, $user, $vote, $comments, $conditionalTerms) {
             // Validate user has CAB Member role
-            if (!$user->hasRole('CAB Member')) {
+            if (!$user->hasPermissionTo('changes.approve')) {
                 throw new \Exception('User is not a CAB member');
             }
 

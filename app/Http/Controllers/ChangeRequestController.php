@@ -213,7 +213,7 @@ class ChangeRequestController extends Controller
             'workflowEvents.publisher',
         ]);
 
-        $engineers = User::role('Engineer')
+        $engineers = User::permission('changes.edit')
             ->orderBy('name')
             ->get(['id', 'name']);
 
@@ -496,7 +496,7 @@ class ChangeRequestController extends Controller
             'workflowEvents.publisher:id,name',
         ]);
 
-        $engineers = User::role('Engineer')
+        $engineers = User::permission('changes.edit')
             ->orderBy('name')
             ->get(['id', 'name']);
 

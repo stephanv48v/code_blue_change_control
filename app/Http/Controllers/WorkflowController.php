@@ -493,11 +493,7 @@ class WorkflowController extends Controller
 
     private function getCabMembers(): \Illuminate\Support\Collection
     {
-        if (!\Spatie\Permission\Models\Role::where('name', 'CAB Member')->where('guard_name', 'web')->exists()) {
-            return collect();
-        }
-
-        return User::role('CAB Member')
+        return User::permission('changes.approve')
             ->select('id', 'name', 'email')
             ->orderBy('name')
             ->get();

@@ -51,7 +51,7 @@ class ClientController extends Controller
      */
     public function create(): Response
     {
-        $accountManagers = User::role(['Super Admin', 'MSP Admin', 'Change Manager'])
+        $accountManagers = User::permission('users.manage')
             ->select('id', 'name')
             ->orderBy('name')
             ->get();
@@ -112,7 +112,7 @@ class ClientController extends Controller
     {
         $client->load('accountManager');
         
-        $accountManagers = User::role(['Super Admin', 'MSP Admin', 'Change Manager'])
+        $accountManagers = User::permission('users.manage')
             ->select('id', 'name')
             ->orderBy('name')
             ->get();

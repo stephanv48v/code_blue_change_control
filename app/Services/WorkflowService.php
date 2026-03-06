@@ -263,8 +263,8 @@ class WorkflowService
     public function assignEngineer(ChangeRequest $change, User $engineer, ?User $assignedBy = null): void
     {
         DB::transaction(function () use ($change, $engineer, $assignedBy) {
-            if (!$engineer->hasRole('Engineer')) {
-                throw new \Exception('User must have Engineer role');
+            if (!$engineer->hasPermissionTo('changes.edit')) {
+                throw new \Exception('User must have changes.edit permission');
             }
 
             if ($change->scheduled_start_date && $change->scheduled_end_date) {

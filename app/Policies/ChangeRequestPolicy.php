@@ -78,7 +78,7 @@ class ChangeRequestPolicy
      */
     public function voteCab(User $user, ChangeRequest $changeRequest): bool
     {
-        return $user->hasRole('CAB Member') && $changeRequest->status === ChangeRequest::STATUS_PENDING_APPROVAL;
+        return $user->hasPermissionTo('changes.approve') && $changeRequest->status === ChangeRequest::STATUS_PENDING_APPROVAL;
     }
 
     /**
