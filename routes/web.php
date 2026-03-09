@@ -149,6 +149,7 @@ Route::middleware(['auth:web'])->group(function () {
         Route::get('/users', [AdminController::class, 'users'])->name('admin.users');
         Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
         Route::put('/users/{user}/roles', [AdminController::class, 'updateUserRoles'])->name('admin.users.roles');
+        Route::post('/users/{user}/reset-password', [AdminController::class, 'resetUserPassword'])->name('admin.users.reset-password');
         
         // Role Management
         Route::get('/roles', [AdminController::class, 'roles'])->name('admin.roles');

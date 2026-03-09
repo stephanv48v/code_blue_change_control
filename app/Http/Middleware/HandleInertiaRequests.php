@@ -63,6 +63,7 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'message' => fn () => $request->session()->get('message'),
                 'error' => fn () => $request->session()->get('error'),
+                'generatedPassword' => fn () => $request->session()->get('generatedPassword'),
             ],
             'config' => [
                 'enable_local_login' => config('app.enable_local_login'),

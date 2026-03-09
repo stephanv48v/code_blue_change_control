@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Role;
@@ -136,18 +137,38 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'role' => 'required|string|exists:roles,name',
+            'password' => 'nullable|string|min:8|max:255',
         ]);
+
+        $password = $validated['password'] ?? Str::password(16);
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => bcrypt(str()->random(32)), // Random password, user will use SSO or reset
+            'password' => bcrypt($password),
         ]);
 
         $user->assignRole($validated['role']);
 
         return redirect()->route('admin.users')
-            ->with('message', "User '{$validated['name']}' created successfully.");
+            ->with('message', "User '{$validated['name']}' created successfully.")
+            ->with('generatedPassword', $password);
+    }
+
+    /**
+     * Reset a user's password and return the new password to the admin.
+     */
+    public function resetUserPassword(User $user): RedirectResponse
+    {
+        $this->authorize('users.manage');
+
+        $password = Str::password(16);
+        $user->password = bcrypt($password);
+        $user->save();
+
+        return redirect()->route('admin.users')
+            ->with('message', "Password reset for '{$user->name}'.")
+            ->with('generatedPassword', $password);
     }
 
     /**

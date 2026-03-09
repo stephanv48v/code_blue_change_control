@@ -35,6 +35,7 @@ export type SharedData = {
     flash: {
         message?: string;
         error?: string;
+        generatedPassword?: string;
     };
     config: {
         enable_local_login: boolean;

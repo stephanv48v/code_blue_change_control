@@ -1,6 +1,7 @@
-import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Edit2, Mail, Plus, Shield, User } from 'lucide-react';
-import { useState } from 'react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { ArrowLeft, Check, Copy, Edit2, KeyRound, Mail, Plus, Shield, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
+import type { SharedData } from '@/types/auth';
 
 interface Role {
     id: number;
@@ -89,12 +91,86 @@ function EditRolesDialog({ user, roles }: { user: UserData; roles: Role[] }) {
     );
 }
 
+function PasswordModal({ password, onClose }: { password: string; onClose: () => void }) {
+    const [copied, setCopied] = useState(false);
+
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(password);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <Dialog open onOpenChange={onClose}>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Generated Password</DialogTitle>
+                    <DialogDescription>
+                        Copy this password now. It will not be shown again.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="flex items-center gap-2 rounded-md border bg-muted p-3">
+                    <code className="flex-1 text-sm font-mono break-all">{password}</code>
+                    <Button variant="ghost" size="sm" onClick={copyToClipboard}>
+                        {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                </div>
+                <DialogFooter>
+                    <Button onClick={onClose}>Done</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function ResetPasswordButton({ user }: { user: UserData }) {
+    const [confirming, setConfirming] = useState(false);
+
+    const handleReset = () => {
+        router.post(`/admin/users/${user.id}/reset-password`, {}, {
+            onSuccess: () => setConfirming(false),
+        });
+    };
+
+    return (
+        <Dialog open={confirming} onOpenChange={setConfirming}>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                    <KeyRound className="mr-1 h-3 w-3" />
+                    Reset Password
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-sm">
+                <DialogHeader>
+                    <DialogTitle>Reset Password</DialogTitle>
+                    <DialogDescription>
+                        Generate a new password for {user.name}? Their current password will stop working immediately.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setConfirming(false)}>Cancel</Button>
+                    <Button variant="destructive" onClick={handleReset}>Reset Password</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 export default function AdminUsers({ users, roles }: Props) {
+    const { flash } = usePage<SharedData>().props;
+    const [showPassword, setShowPassword] = useState<string | null>(null);
+
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         email: '',
         role: '',
     });
+
+    useEffect(() => {
+        if (flash.generatedPassword) {
+            setShowPassword(flash.generatedPassword);
+        }
+    }, [flash.generatedPassword]);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
@@ -109,6 +185,10 @@ export default function AdminUsers({ users, roles }: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Manage Users" />
+
+            {showPassword && (
+                <PasswordModal password={showPassword} onClose={() => setShowPassword(null)} />
+            )}
 
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 <div className="flex items-center justify-between">
@@ -190,6 +270,12 @@ export default function AdminUsers({ users, roles }: Props) {
                     </div>
                 </div>
 
+                {flash.message && !flash.generatedPassword && (
+                    <Alert>
+                        <AlertDescription>{flash.message}</AlertDescription>
+                    </Alert>
+                )}
+
                 <div className="grid gap-4">
                     {users.map((user) => (
                         <Card key={user.id}>
@@ -219,6 +305,7 @@ export default function AdminUsers({ users, roles }: Props) {
                                             </Badge>
                                         ))}
                                         <EditRolesDialog user={user} roles={roles} />
+                                        <ResetPasswordButton user={user} />
                                     </div>
                                 </div>
                             </CardContent>
