@@ -24,10 +24,7 @@ class Approval extends Model
         'user_id',
         'status',
         'comments',
-        'responded_at',
         'due_at',
-        'reminder_sent_at',
-        'escalated_at',
         'escalation_level',
         'notification_status',
     ];
@@ -57,19 +54,17 @@ class Approval extends Model
 
     public function approve(?string $comments = null): void
     {
-        $this->update([
-            'status' => self::STATUS_APPROVED,
-            'comments' => $comments,
-            'responded_at' => now(),
-        ]);
+        $this->status = self::STATUS_APPROVED;
+        $this->comments = $comments;
+        $this->responded_at = now();
+        $this->save();
     }
 
     public function reject(?string $comments = null): void
     {
-        $this->update([
-            'status' => self::STATUS_REJECTED,
-            'comments' => $comments,
-            'responded_at' => now(),
-        ]);
+        $this->status = self::STATUS_REJECTED;
+        $this->comments = $comments;
+        $this->responded_at = now();
+        $this->save();
     }
 }

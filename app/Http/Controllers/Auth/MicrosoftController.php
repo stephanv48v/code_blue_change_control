@@ -62,30 +62,44 @@ class MicrosoftController extends Controller
                     ->withErrors(['microsoft' => 'Invalid organization. Please use your MSP account.']);
             }
 
-            // Find or create user
-            $user = User::where('microsoft_id', $microsoftUser->getId())
-                ->orWhere('email', $microsoftUser->getEmail())
-                ->first();
-
-            $isNewUser = ! $user;
+            // Find user by Microsoft ID first (secure), then fall back to email match
+            $user = User::where('microsoft_id', $microsoftUser->getId())->first();
+            $isNewUser = false;
 
             if ($user) {
+                // Existing linked user — update profile
                 $user->update([
-                    'microsoft_id' => $microsoftUser->getId(),
-                    'provider' => 'microsoft',
-                    'provider_subject' => $microsoftUser->getId(),
                     'name' => $microsoftUser->getName() ?? $user->name,
                     'last_login_at' => now(),
                 ]);
             } else {
-                $user = User::create([
-                    'name' => $microsoftUser->getName(),
-                    'email' => $microsoftUser->getEmail(),
-                    'microsoft_id' => $microsoftUser->getId(),
-                    'provider' => 'microsoft',
-                    'provider_subject' => $microsoftUser->getId(),
-                    'last_login_at' => now(),
-                ]);
+                // No microsoft_id match — check if an unlinked user with this email exists
+                $emailUser = User::where('email', $microsoftUser->getEmail())
+                    ->whereNull('microsoft_id')
+                    ->first();
+
+                if ($emailUser) {
+                    // Link this Microsoft account to the existing email-matched user
+                    $emailUser->update([
+                        'microsoft_id' => $microsoftUser->getId(),
+                        'provider' => 'microsoft',
+                        'provider_subject' => $microsoftUser->getId(),
+                        'name' => $microsoftUser->getName() ?? $emailUser->name,
+                        'last_login_at' => now(),
+                    ]);
+                    $user = $emailUser;
+                } else {
+                    // Completely new user
+                    $isNewUser = true;
+                    $user = User::create([
+                        'name' => $microsoftUser->getName(),
+                        'email' => $microsoftUser->getEmail(),
+                        'microsoft_id' => $microsoftUser->getId(),
+                        'provider' => 'microsoft',
+                        'provider_subject' => $microsoftUser->getId(),
+                        'last_login_at' => now(),
+                    ]);
+                }
             }
 
             // Sync group-based roles (works for both new and returning users)
@@ -96,14 +110,13 @@ class MicrosoftController extends Controller
                 $this->assignDefaultRole($user);
             }
 
-            Auth::login($user, true);
+            Auth::login($user);
 
             return redirect()->intended(route('dashboard'));
 
         } catch (\Exception $e) {
             Log::error('Microsoft SSO error', [
                 'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
 
             return redirect()->route('login')

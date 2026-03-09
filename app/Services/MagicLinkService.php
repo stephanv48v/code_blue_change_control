@@ -20,10 +20,9 @@ class MagicLinkService
     {
         $token = Str::random(64);
         
-        $contact->update([
-            'magic_link_token' => Hash::make($token),
-            'magic_link_expires_at' => now()->addMinutes(self::TOKEN_EXPIRY_MINUTES),
-        ]);
+        $contact->magic_link_token = Hash::make($token);
+        $contact->magic_link_expires_at = now()->addMinutes(self::TOKEN_EXPIRY_MINUTES);
+        $contact->save();
         
         return $token;
     }
@@ -56,10 +55,9 @@ class MagicLinkService
      */
     public function invalidateToken(ClientContact $contact): void
     {
-        $contact->update([
-            'magic_link_token' => null,
-            'magic_link_expires_at' => null,
-        ]);
+        $contact->magic_link_token = null;
+        $contact->magic_link_expires_at = null;
+        $contact->save();
     }
 
     /**

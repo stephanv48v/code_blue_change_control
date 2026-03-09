@@ -36,13 +36,23 @@ class ClientMicrosoftController extends Controller
                 'email' => $microsoftUser->getEmail(),
             ]);
 
-            // Find contact by Microsoft ID or email
-            $contact = ClientContact::where('microsoft_id', $microsoftUser->getId())
-                ->orWhere('email', $microsoftUser->getEmail())
-                ->first();
+            // Find contact by Microsoft ID first (secure), then fall back to unlinked email match
+            $contact = ClientContact::where('microsoft_id', $microsoftUser->getId())->first();
+
+            if (! $contact) {
+                $contact = ClientContact::where('email', $microsoftUser->getEmail())
+                    ->whereNull('microsoft_id')
+                    ->first();
+            }
 
             if ($contact) {
-                // Update existing contact with Microsoft info
+                // Check authorization BEFORE updating any profile data
+                if (!$contact->is_active || !$contact->is_approver) {
+                    return redirect()->route('client.login')
+                        ->withErrors(['microsoft' => 'Your account is not authorized to access the portal.']);
+                }
+
+                // Update contact with Microsoft info only after authorization passes
                 $contact->update([
                     'microsoft_id' => $microsoftUser->getId(),
                     'provider' => 'microsoft',
@@ -50,14 +60,8 @@ class ClientMicrosoftController extends Controller
                     'last_login_at' => now(),
                 ]);
 
-                // Check if contact is active and approver
-                if (!$contact->is_active || !$contact->is_approver) {
-                    return redirect()->route('client.login')
-                        ->withErrors(['microsoft' => 'Your account is not authorized to access the portal.']);
-                }
+                Auth::guard('client')->login($contact);
 
-                Auth::guard('client')->login($contact, true);
-                
                 return redirect()->intended(route('client.dashboard'));
             }
 
@@ -68,7 +72,6 @@ class ClientMicrosoftController extends Controller
         } catch (\Exception $e) {
             Log::error('Client Microsoft SSO error', [
                 'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
 
             return redirect()->route('client.login')

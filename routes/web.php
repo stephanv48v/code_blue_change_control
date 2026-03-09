@@ -12,6 +12,7 @@ use App\Http\Controllers\Auth\ClientPortalController;
 use App\Http\Controllers\ChangePolicyController;
 use App\Http\Controllers\Auth\LocalAuthController;
 use App\Http\Controllers\Auth\MicrosoftController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ChangeRequestController;
 use App\Http\Controllers\ClientContactController;
 use App\Http\Controllers\ClientController;
@@ -88,11 +89,11 @@ Route::prefix('portal')->group(function () {
 
     Route::post('/magic-link', [ClientPortalController::class, 'sendMagicLink'])
         ->name('client.magic-link.send')
-        ->middleware('guest:client');
+        ->middleware(['guest:client', 'throttle:5,1']);
 
     Route::get('/magic-link/verify', [ClientPortalController::class, 'magicLinkLogin'])
         ->name('client.magic-link.login')
-        ->middleware('guest:client');
+        ->middleware(['guest:client', 'throttle:10,1']);
 
     // Client Microsoft SSO (multi-tenant/common)
     Route::get('/auth/microsoft', [ClientMicrosoftController::class, 'redirect'])
@@ -141,7 +142,7 @@ Route::middleware(['auth:web'])->group(function () {
         ->middleware('can:dashboard.view');
     
     // Admin Panel - requires users.manage permission
-    Route::middleware(['can:users.manage'])->prefix('admin')->group(function () {
+    Route::middleware(['can:users.manage', 'throttle:30,1'])->prefix('admin')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('admin.index');
         
         // User Management
@@ -184,7 +185,7 @@ Route::middleware(['auth:web'])->group(function () {
         ->middleware('can:integrations.view');
 
     // Integrations write operations - requires integrations.manage
-    Route::middleware(['can:integrations.manage'])->group(function () {
+    Route::middleware(['can:integrations.manage', 'throttle:30,1'])->group(function () {
         Route::get('/integrations/create', [IntegrationConnectionController::class, 'create'])
             ->name('integrations.create');
         Route::post('/integrations', [IntegrationConnectionController::class, 'store'])
@@ -206,7 +207,7 @@ Route::middleware(['auth:web'])->group(function () {
     });
 
     // Governance - change policies and blackout windows
-    Route::middleware(['can:policies.manage'])->group(function () {
+    Route::middleware(['can:policies.manage', 'throttle:30,1'])->group(function () {
         Route::get('/governance', [ChangePolicyController::class, 'index'])
             ->name('governance.index');
         Route::post('/governance/policies', [ChangePolicyController::class, 'store'])
@@ -233,7 +234,8 @@ Route::middleware(['auth:web'])->group(function () {
         // ConnectWise ticket lookup for change autofill
         Route::get('/api/connectwise/ticket/{ticketNumber}', [ConnectWiseTicketController::class, 'lookup'])
             ->name('connectwise.ticket.lookup')
-            ->where('ticketNumber', '[0-9]+');
+            ->where('ticketNumber', '[0-9]+')
+            ->middleware('throttle:20,1');
     });
 
     Route::middleware(['can:changes.edit'])->group(function () {
@@ -252,6 +254,11 @@ Route::middleware(['auth:web'])->group(function () {
     Route::get('/reports', [ReportsController::class, 'index'])
         ->name('reports.index')
         ->middleware('can:changes.view');
+
+    // Calendar
+    Route::get('/calendar', [CalendarController::class, 'index'])
+        ->middleware('can:changes.view')
+        ->name('calendar');
 
     // Change Requests - requires changes.view permission
     Route::middleware(['can:changes.view'])->group(function () {

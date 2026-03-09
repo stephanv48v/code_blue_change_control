@@ -91,6 +91,10 @@ class WorkflowController extends Controller
 
         $engineer = User::findOrFail($validated['engineer_id']);
 
+        if (!$engineer->can('changes.edit')) {
+            return back()->withErrors(['engineer' => 'Selected user does not have engineer permissions.']);
+        }
+
         try {
             $this->workflowService->assignEngineer($change, $engineer, $request->user());
 

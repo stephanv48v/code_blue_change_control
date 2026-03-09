@@ -103,6 +103,9 @@ class IntegrationConnectionController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'code']);
 
+        // Make credentials visible for the edit form (hidden by default on the model)
+        $integration->makeVisible(['credentials', 'webhook_secret']);
+
         return Inertia::render('Integrations/Edit', [
             'integration' => $integration,
             'clients' => $clients,

@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     LayoutGrid,
     FileText,
+    Calendar,
     CalendarClock,
     Vote,
     Building2,
@@ -39,7 +40,13 @@ const mainNavItems: NavItem[] = [
         requiredPermission: 'changes.view',
     },
     {
-        title: 'Scheduled Changes',
+        title: 'Calendar',
+        href: '/calendar',
+        icon: Calendar,
+        requiredPermission: 'changes.view',
+    },
+    {
+        title: 'My Schedule',
         href: '/changes/my-scheduled',
         icon: CalendarClock,
         requiredPermission: 'changes.view',

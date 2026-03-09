@@ -68,8 +68,8 @@ class WorkflowService
                     $updates['rejection_reason'] = null;
                     break;
                 case 'approved':
-                    $updates['approved_at'] = now();
-                    $updates['approved_by'] = $user?->id;
+                    $change->approved_at = now();
+                    $change->approved_by = $user?->id;
                     // Only resolve CAB approval records — client approvals require
                     // explicit bypass so the client is properly notified.
                     Approval::where('change_request_id', $change->id)

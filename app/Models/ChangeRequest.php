@@ -54,14 +54,6 @@ class ChangeRequest extends Model
         'test_plan',
         'business_justification',
         'assigned_engineer_id',
-        'approved_by',
-        'approved_at',
-        'cab_approver_id',
-        'cab_approved_at',
-        'cab_conditions',
-        'cab_conditions_status',
-        'cab_conditions_confirmed_at',
-        'cab_conditions_confirmed_by',
         'rejection_reason',
     ];
 

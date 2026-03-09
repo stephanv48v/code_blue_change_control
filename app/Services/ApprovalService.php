@@ -179,8 +179,8 @@ class ApprovalService
      */
     public function checkClientApprovalsComplete(ChangeRequest $changeRequest): void
     {
-        // Re-read status to catch concurrent rejection by another approver
-        $changeRequest->refresh();
+        // Re-read with a pessimistic lock to prevent concurrent approval races
+        $changeRequest = ChangeRequest::lockForUpdate()->find($changeRequest->id);
 
         // Only advance workflow from states where client approvals are actively awaited.
         // Any other status (approved, scheduled, in_progress, completed, rejected, cancelled)
@@ -195,6 +195,7 @@ class ApprovalService
         $pendingCount = Approval::where('change_request_id', $changeRequest->id)
             ->where('type', Approval::TYPE_CLIENT)
             ->where('status', Approval::STATUS_PENDING)
+            ->lockForUpdate()
             ->count();
 
         if ($pendingCount === 0) {
@@ -207,13 +208,13 @@ class ApprovalService
             if ($approvedCount > 0) {
                 if ($changeRequest->requires_cab_approval) {
                     // Move to pending CAB approval
-                    $changeRequest->update(['status' => ChangeRequest::STATUS_PENDING_APPROVAL]);
+                    $changeRequest->status = ChangeRequest::STATUS_PENDING_APPROVAL;
+                    $changeRequest->save();
                     $this->ensureCabApproval($changeRequest);
                 } else {
-                    $changeRequest->update([
-                        'status' => ChangeRequest::STATUS_APPROVED,
-                        'approved_at' => now(),
-                    ]);
+                    $changeRequest->status = ChangeRequest::STATUS_APPROVED;
+                    $changeRequest->approved_at = now();
+                    $changeRequest->save();
                 }
             }
         }
@@ -224,8 +225,12 @@ class ApprovalService
      */
     public function checkCabQuorum(ChangeRequest $changeRequest): void
     {
+        // Lock the change request to prevent concurrent quorum checks from racing
+        $changeRequest = ChangeRequest::lockForUpdate()->find($changeRequest->id);
+
         $votes = CabVote::with('user:id,name')
             ->where('change_request_id', $changeRequest->id)
+            ->lockForUpdate()
             ->get();
 
         // Emergency changes use a reduced quorum for expedited approval
@@ -267,14 +272,13 @@ class ApprovalService
      */
     public function approveChange(ChangeRequest $changeRequest): void
     {
-        $changeRequest->update([
-            'status' => ChangeRequest::STATUS_APPROVED,
-            'approved_at' => now(),
-            'cab_conditions' => null,
-            'cab_conditions_status' => null,
-            'cab_conditions_confirmed_at' => null,
-            'cab_conditions_confirmed_by' => null,
-        ]);
+        $changeRequest->status = ChangeRequest::STATUS_APPROVED;
+        $changeRequest->approved_at = now();
+        $changeRequest->cab_conditions = null;
+        $changeRequest->cab_conditions_status = null;
+        $changeRequest->cab_conditions_confirmed_at = null;
+        $changeRequest->cab_conditions_confirmed_by = null;
+        $changeRequest->save();
 
         Approval::where('change_request_id', $changeRequest->id)
             ->where('type', Approval::TYPE_CAB)
@@ -291,14 +295,13 @@ class ApprovalService
      */
     public function approveWithConditions(ChangeRequest $changeRequest, string $conditions): void
     {
-        $changeRequest->update([
-            'status' => ChangeRequest::STATUS_APPROVED,
-            'approved_at' => now(),
-            'cab_conditions' => $conditions,
-            'cab_conditions_status' => ChangeRequest::CAB_CONDITIONS_PENDING,
-            'cab_conditions_confirmed_at' => null,
-            'cab_conditions_confirmed_by' => null,
-        ]);
+        $changeRequest->status = ChangeRequest::STATUS_APPROVED;
+        $changeRequest->approved_at = now();
+        $changeRequest->cab_conditions = $conditions;
+        $changeRequest->cab_conditions_status = ChangeRequest::CAB_CONDITIONS_PENDING;
+        $changeRequest->cab_conditions_confirmed_at = null;
+        $changeRequest->cab_conditions_confirmed_by = null;
+        $changeRequest->save();
 
         Approval::where('change_request_id', $changeRequest->id)
             ->where('type', Approval::TYPE_CAB)
@@ -318,14 +321,13 @@ class ApprovalService
      */
     public function rejectChange(ChangeRequest $changeRequest): void
     {
-        $changeRequest->update([
-            'status' => ChangeRequest::STATUS_REJECTED,
-            'rejection_reason' => 'Rejected by CAB vote',
-            'cab_conditions' => null,
-            'cab_conditions_status' => null,
-            'cab_conditions_confirmed_at' => null,
-            'cab_conditions_confirmed_by' => null,
-        ]);
+        $changeRequest->status = ChangeRequest::STATUS_REJECTED;
+        $changeRequest->rejection_reason = 'Rejected by CAB vote';
+        $changeRequest->cab_conditions = null;
+        $changeRequest->cab_conditions_status = null;
+        $changeRequest->cab_conditions_confirmed_at = null;
+        $changeRequest->cab_conditions_confirmed_by = null;
+        $changeRequest->save();
 
         Approval::where('change_request_id', $changeRequest->id)
             ->where('type', Approval::TYPE_CAB)
@@ -346,11 +348,10 @@ class ApprovalService
             throw new \Exception('No pending CAB conditions to confirm.');
         }
 
-        $changeRequest->update([
-            'cab_conditions_status' => ChangeRequest::CAB_CONDITIONS_CONFIRMED,
-            'cab_conditions_confirmed_at' => now(),
-            'cab_conditions_confirmed_by' => $user->id,
-        ]);
+        $changeRequest->cab_conditions_status = ChangeRequest::CAB_CONDITIONS_CONFIRMED;
+        $changeRequest->cab_conditions_confirmed_at = now();
+        $changeRequest->cab_conditions_confirmed_by = $user->id;
+        $changeRequest->save();
 
         $changeRequest->logEvent(
             'cab_conditions_confirmed',
@@ -371,14 +372,13 @@ class ApprovalService
         DB::transaction(function () use ($changeRequest, $user, $reason) {
             $bypassComment = "CAB vote bypassed by {$user->name}. Reason: {$reason}";
 
-            $changeRequest->update([
-                'status' => ChangeRequest::STATUS_APPROVED,
-                'approved_at' => now(),
-                'cab_conditions' => null,
-                'cab_conditions_status' => null,
-                'cab_conditions_confirmed_at' => null,
-                'cab_conditions_confirmed_by' => null,
-            ]);
+            $changeRequest->status = ChangeRequest::STATUS_APPROVED;
+            $changeRequest->approved_at = now();
+            $changeRequest->cab_conditions = null;
+            $changeRequest->cab_conditions_status = null;
+            $changeRequest->cab_conditions_confirmed_at = null;
+            $changeRequest->cab_conditions_confirmed_by = null;
+            $changeRequest->save();
 
             Approval::where('change_request_id', $changeRequest->id)
                 ->where('type', Approval::TYPE_CAB)

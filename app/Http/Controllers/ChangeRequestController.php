@@ -385,13 +385,13 @@ class ChangeRequestController extends Controller
 
         // Auto-approve low-risk standard changes
         if ($policyDecision['auto_approve'] ?? false) {
+            $change->approved_by = $request->user()->id;
+            $change->approved_at = now();
             $change->update([
                 'status'                => ChangeRequest::STATUS_APPROVED,
                 'risk_score'            => $policyDecision['risk_score'],
                 'policy_decision'       => $policyDecision,
                 'requires_cab_approval' => $requiresCab,
-                'approved_by'           => $request->user()->id,
-                'approved_at'           => now(),
             ]);
 
             \App\Models\AuditEvent::log(
@@ -439,13 +439,13 @@ class ChangeRequestController extends Controller
             }
 
             // No approvals needed at all → approve immediately
+            $change->approved_by = $request->user()->id;
+            $change->approved_at = now();
             $change->update([
                 'status'                => ChangeRequest::STATUS_APPROVED,
                 'risk_score'            => $policyDecision['risk_score'],
                 'policy_decision'       => $policyDecision,
                 'requires_cab_approval' => false,
-                'approved_by'           => $request->user()->id,
-                'approved_at'           => now(),
             ]);
 
             \App\Models\AuditEvent::log(

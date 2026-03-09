@@ -31,10 +31,13 @@ class ClientContact extends Model implements Authenticatable
         'microsoft_id',
         'provider',
         'provider_subject',
+        'notes',
+    ];
+
+    protected $hidden = [
         'magic_link_token',
         'magic_link_expires_at',
         'remember_token',
-        'notes',
     ];
 
     protected $casts = [

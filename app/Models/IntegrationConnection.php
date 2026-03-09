@@ -35,8 +35,13 @@ class IntegrationConnection extends Model
         'is_active',
     ];
 
+    protected $hidden = [
+        'credentials',
+        'webhook_secret',
+    ];
+
     protected $casts = [
-        'credentials' => 'array',
+        'credentials' => 'encrypted:array',
         'settings' => 'array',
         'webhook_secret' => 'encrypted',
         'last_synced_at' => 'datetime',

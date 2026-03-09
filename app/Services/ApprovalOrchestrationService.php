@@ -41,10 +41,9 @@ class ApprovalOrchestrationService
             ->get();
 
         foreach ($dueSoonApprovals as $approval) {
-            $approval->update([
-                'reminder_sent_at' => now(),
-                'notification_status' => 'reminder_sent',
-            ]);
+            $approval->reminder_sent_at = now();
+            $approval->notification_status = 'reminder_sent';
+            $approval->save();
 
             // Notify the client contact if this is a client approval
             if ($approval->type === Approval::TYPE_CLIENT && $approval->clientContact) {
@@ -85,11 +84,10 @@ class ApprovalOrchestrationService
      */
     public function escalateSingleApproval(Approval $approval): void
     {
-        $approval->update([
-            'escalated_at' => now(),
-            'escalation_level' => (int) $approval->escalation_level + 1,
-            'notification_status' => 'escalated',
-        ]);
+        $approval->escalated_at = now();
+        $approval->escalation_level = (int) $approval->escalation_level + 1;
+        $approval->notification_status = 'escalated';
+        $approval->save();
 
         $approval->changeRequest?->logEvent(
             'approval_escalated',
